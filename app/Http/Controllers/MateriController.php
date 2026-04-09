@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Materi;
 use App\Models\MateriProgress;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -11,12 +12,13 @@ class MateriController extends Controller
 {
     public function index()
     {
+        /** @var User $user */
         $user       = Auth::user();
-        $materiList = Materi::orderBy('created_at')->get();
+        $materiList = Materi::orderBy('created_at', 'asc')->get();
 
         // Ambil status progress milik siswa yang login
         $statusMap = [];
-        if ($user->isSiswa()) {
+        if ($user && $user->isSiswa()) {
             $progresses = MateriProgress::where('user_id', $user->id)->get();
             foreach ($progresses as $p) {
                 $statusMap[$p->materi_id] = $p->status;
@@ -26,18 +28,20 @@ class MateriController extends Controller
         $totalMateri    = $materiList->count();
         $completedCount = count(array_filter($statusMap, fn($s) => $s === 'selesai'));
         $progressPct    = $totalMateri > 0 ? round(($completedCount / $totalMateri) * 100) : 0;
+        $progressWidth  = $progressPct . '%';
 
         return view('materi.index', compact(
-            'materiList', 'statusMap', 'completedCount', 'totalMateri', 'progressPct'
+            'materiList', 'statusMap', 'completedCount', 'totalMateri', 'progressPct', 'progressWidth'
         ));
     }
 
     public function show(Materi $materi)
     {
+        /** @var User $user */
         $user   = Auth::user();
         $status = null;
 
-        if ($user->isSiswa()) {
+        if ($user && $user->isSiswa()) {
             $progress = MateriProgress::where('user_id', $user->id)
                 ->where('materi_id', $materi->id)->first();
             $status = $progress?->status ?? 'belum';
@@ -96,9 +100,10 @@ class MateriController extends Controller
     public function updateStatus(Request $request, Materi $materi)
     {
         $request->validate(['status' => 'required|in:belum,sedang,selesai']);
+        /** @var User $user */
         $user = Auth::user();
 
-        if (!$user->isSiswa()) {
+        if (!$user || !$user->isSiswa()) {
             abort(403);
         }
 
@@ -117,7 +122,10 @@ class MateriController extends Controller
 
     private function authorizeGuru(): void
     {
-        if (!Auth::user()->isGuru() && !Auth::user()->isAdmin()) {
+        /** @var User $user */
+        $user = Auth::user();
+        
+        if (!$user || (!$user->isGuru() && !$user->isAdmin())) {
             abort(403, 'Akses ditolak.');
         }
     }

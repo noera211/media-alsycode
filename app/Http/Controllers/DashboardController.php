@@ -15,11 +15,12 @@ class DashboardController extends Controller
 {
     public function index()
     {
+        /** @var User $user */
         $user           = Auth::user();
         $totalMateri    = Materi::count();
         $levelSettings  = LevelSetting::pluck('min_materi', 'difficulty');
 
-        if ($user->isSiswa()) {
+        if ($user && $user->isSiswa()) {
             $completedCount = $user->completedMateriCount();
             $progressPct    = $totalMateri > 0
                 ? round(($completedCount / $totalMateri) * 100)

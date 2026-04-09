@@ -15,9 +15,10 @@ class NilaiController extends Controller
 
     public function index()
     {
+        /** @var User $user */
         $user = Auth::user();
 
-        if ($user->isGuru()) {
+        if ($user && $user->isGuru()) {
             // Guru lihat semua siswa + nilai PBL mereka
             $siswaList = User::where('role', 'siswa')
                 ->where('is_active', true)->get();
@@ -119,8 +120,9 @@ class NilaiController extends Controller
 
     public function submitTest(Request $request)
     {
+        /** @var User $user */
         $user      = Auth::user();
-        if (!$user->isSiswa()) abort(403);
+        if (!$user || !$user->isSiswa()) abort(403);
 
         $questions = TestQuestion::all();
         $answers   = $request->input('answers', []);
@@ -154,7 +156,10 @@ class NilaiController extends Controller
 
     private function authorizeGuru(): void
     {
-        if (!Auth::user()->isGuru() && !Auth::user()->isAdmin()) {
+        /** @var User $user */
+        $user = Auth::user();
+        
+        if (!$user || (!$user->isGuru() && !$user->isAdmin())) {
             abort(403);
         }
     }

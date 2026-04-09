@@ -6,6 +6,7 @@ use App\Models\LevelSetting;
 use App\Models\MateriProgress;
 use App\Models\PblActivity;
 use App\Models\PblSubmission;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -13,6 +14,7 @@ class PblController extends Controller
 {
     public function index()
     {
+        /** @var User $user */
         $user          = Auth::user();
         $activities    = PblActivity::orderBy('difficulty')->get();
         $levelSettings = LevelSetting::pluck('min_materi', 'difficulty');
@@ -21,7 +23,7 @@ class PblController extends Controller
         $accessible     = ['Mudah', 'Sedang', 'Sulit']; // guru bisa lihat semua
         $submittedIds   = [];
 
-        if ($user->isSiswa()) {
+        if ($user && $user->isSiswa()) {
             $completedCount = $user->completedMateriCount();
             $accessible     = [];
             foreach ($levelSettings as $diff => $min) {
@@ -39,10 +41,11 @@ class PblController extends Controller
 
     public function show(PblActivity $pblActivity)
     {
+        /** @var User $user */
         $user = Auth::user();
 
         // Cek lock untuk siswa
-        if ($user->isSiswa()) {
+        if ($user && $user->isSiswa()) {
             $levelSettings  = LevelSetting::pluck('min_materi', 'difficulty');
             $completedCount = $user->completedMateriCount();
             $minRequired    = $levelSettings[$pblActivity->difficulty] ?? 1;
@@ -54,13 +57,13 @@ class PblController extends Controller
         }
 
         $submission = null;
-        if ($user->isSiswa()) {
+        if ($user && $user->isSiswa()) {
             $submission = PblSubmission::where('activity_id', $pblActivity->id)
                 ->where('student_id', $user->id)->first();
         }
 
         $submissions = null;
-        if ($user->isGuru()) {
+        if ($user && $user->isGuru()) {
             $submissions = PblSubmission::with('student')
                 ->where('activity_id', $pblActivity->id)
                 ->orderByDesc('submitted_at')->get();
@@ -114,8 +117,9 @@ class PblController extends Controller
     // Siswa mengumpulkan jawaban
     public function submit(Request $request, PblActivity $pblActivity)
     {
+        /** @var User $user */
         $user = Auth::user();
-        if (!$user->isSiswa()) abort(403);
+        if (!$user || !$user->isSiswa()) abort(403);
 
         $request->validate([
             'answer' => 'nullable|string',
@@ -187,7 +191,10 @@ class PblController extends Controller
 
     private function authorizeGuru(): void
     {
-        if (!Auth::user()->isGuru() && !Auth::user()->isAdmin()) {
+        /** @var User $user */
+        $user = Auth::user();
+        
+        if (!$user || (!$user->isGuru() && !$user->isAdmin())) {
             abort(403);
         }
     }
