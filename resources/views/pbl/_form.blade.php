@@ -19,8 +19,17 @@
     </div>
     <div>
         <label class="block text-sm font-medium text-gray-700 mb-1">Materi Terkait</label>
-        <input type="text" name="related_materi" value="{{ old('related_materi', $pblActivity->related_materi ?? '') }}"
-            class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+        <select name="related_materi" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+            <option value="">-- Pilih Materi --</option>
+            @if(isset($materiList))
+                @foreach($materiList as $materi)
+                    <option value="{{ $materi->id }}" {{ old('related_materi', $pblActivity->related_materi ?? '') == $materi->id ? 'selected' : '' }}>
+                        {{ $materi->title }}
+                    </option>
+                @endforeach
+            @endif
+        </select>
+        <p class="text-xs text-gray-400 mt-1">Pilih materi yang terkait dengan aktivitas ini</p>
     </div>
 </div>
 <div>

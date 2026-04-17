@@ -83,6 +83,9 @@
                         <h3 class="font-semibold text-gray-800 mb-1">{{ $act->title }}</h3>
                         <p class="text-xs text-gray-500 mb-2">{{ $act->topic }}</p>
                         <span class="badge-{{ strtolower($level) }}">{{ $level }}</span>
+                        @if($act->relatedMateri)
+                            <span class="ml-2 text-xs text-indigo-600 font-medium">📚 {{ $act->relatedMateri->title }}</span>
+                        @endif
                         @if(auth()->user()->isSiswa() && in_array($act->id, $submittedIds))
                             <span class="ml-2 text-xs text-emerald-600 font-semibold">✓ Dikumpulkan</span>
                         @endif
@@ -96,11 +99,11 @@
                     <a href="{{ route('pbl.show', $act) }}" class="btn-primary text-xs flex-1 text-center">Lihat Detail →</a>
                     @endif
                     @if(auth()->user()->isGuru())
-                    <button onclick="openEditPbl({{ $act->id }}, '{{ addslashes($act->title) }}', '{{ addslashes($act->topic) }}', '{{ $act->difficulty }}', '{{ addslashes($act->problem) }}', '{{ addslashes($act->related_materi) }}')"
-                        class="btn-outline text-xs">✏ Edit</button>
-                    <form action="{{ route('pbl.destroy', $act) }}" method="POST" onsubmit="return confirm('Hapus aktivitas ini?')">
+                    <button type="button" onclick="openEditPbl({{ $act->id }}, {{ json_encode($act->title) }}, {{ json_encode($act->topic) }}, {{ json_encode($act->difficulty) }}, {{ json_encode($act->problem) }}, {{ json_encode($act->related_materi) }})"
+                        class="btn-outline text-xs cursor-pointer">✏ Edit</button>
+                    <form action="{{ route('pbl.destroy', $act) }}" method="POST" onsubmit="return confirm('Hapus aktivitas ini?')" class="inline">
                         @csrf @method('DELETE')
-                        <button class="btn-danger text-xs">🗑</button>
+                        <button type="submit" class="btn-danger text-xs cursor-pointer">🗑</button>
                     </form>
                     @endif
                 </div>
@@ -118,7 +121,7 @@
             <h2 class="text-lg font-bold mb-4">Tambah Aktivitas PBL</h2>
             <form action="{{ route('pbl.store') }}" method="POST" class="space-y-4">
                 @csrf
-                @include('pbl._form')
+                @include('pbl._form', ['materiList' => $materiList ?? []])
                 <div class="flex gap-3 justify-end pt-2">
                     <button type="button" onclick="document.getElementById('modal-create').classList.add('hidden')" class="btn-outline">Batal</button>
                     <button type="submit" class="btn-primary">Simpan</button>
@@ -129,13 +132,20 @@
 </div>
 
 {{-- Modal Edit --}}
-<div id="modal-edit" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+<div id="modal-edit" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/50" onclick="if(event.target === this) this.classList.add('hidden')">
     <div class="bg-white rounded-2xl shadow-xl w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto">
         <div class="p-6">
-            <h2 class="text-lg font-bold mb-4">Edit Aktivitas PBL</h2>
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-lg font-bold">Edit Aktivitas PBL</h2>
+                <button type="button" onclick="document.getElementById('modal-edit').classList.add('hidden')" class="text-gray-400 hover:text-gray-600">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
             <form id="edit-pbl-form" action="" method="POST" class="space-y-4">
                 @csrf @method('PUT')
-                @include('pbl._form', ['edit' => true])
+                @include('pbl._form', ['edit' => true, 'materiList' => $materiList ?? []])
                 <div class="flex gap-3 justify-end pt-2">
                     <button type="button" onclick="document.getElementById('modal-edit').classList.add('hidden')" class="btn-outline">Batal</button>
                     <button type="submit" class="btn-primary">Simpan Perubahan</button>
@@ -148,15 +158,43 @@
 
 @push('scripts')
 <script>
-function openEditPbl(id, title, topic, difficulty, problem, relatedMateri) {
-    const f = document.getElementById('edit-pbl-form');
-    f.action = '/aktivitas-pbl/' + id;
-    f.querySelector('[name=title]').value = title;
-    f.querySelector('[name=topic]').value = topic;
-    f.querySelector('[name=difficulty]').value = difficulty;
-    f.querySelector('[name=problem]').value = problem;
-    f.querySelector('[name=related_materi]').value = relatedMateri;
-    document.getElementById('modal-edit').classList.remove('hidden');
-}
+window.openEditPbl = function(id, title, topic, difficulty, problem, relatedMateri) {
+    console.log('Opening edit modal for:', id, title);
+    
+    const form = document.getElementById('edit-pbl-form');
+    if (!form) {
+        alert('Form edit tidak ditemukan');
+        return;
+    }
+    
+    // Set form action
+    form.action = '/aktivitas-pbl/' + id;
+    
+    // Fill form fields
+    const fields = {
+        'title': title,
+        'topic': topic,
+        'difficulty': difficulty,
+        'problem': problem,
+        'related_materi': relatedMateri
+    };
+    
+    Object.keys(fields).forEach(name => {
+        const field = form.querySelector('[name="' + name + '"]');
+        if (field) {
+            field.value = fields[name];
+            console.log('Set', name, '=', fields[name]);
+        }
+    });
+    
+    // Show modal
+    const modal = document.getElementById('modal-edit');
+    if (modal) {
+        modal.classList.remove('hidden');
+        console.log('Modal opened');
+    } else {
+        alert('Modal tidak ditemukan');
+    }
+};
 </script>
 @endpush

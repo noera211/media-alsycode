@@ -137,9 +137,14 @@
     <div class="space-y-4">
         <div class="card p-5">
             <h3 class="font-semibold text-gray-800 mb-3 text-sm">📚 Materi Terkait</h3>
-            <a href="{{ route('materi.index') }}" class="text-sm text-indigo-600 hover:underline font-medium">
-                {{ $pblActivity->related_materi }}
-            </a>
+            @if($pblActivity->relatedMateri)
+                <a href="{{ route('materi.show', $pblActivity->relatedMateri) }}" class="text-sm text-indigo-600 hover:underline font-medium">
+                    {{ $pblActivity->relatedMateri->title }}
+                </a>
+                <p class="text-xs text-gray-500 mt-1">{{ Str::limit($pblActivity->relatedMateri->description, 80) }}</p>
+            @else
+                <p class="text-sm text-gray-400">Tidak ada materi terkait</p>
+            @endif
         </div>
         <div class="card p-5">
             <h3 class="font-semibold text-gray-800 mb-3 text-sm">💻 Mini Compiler</h3>

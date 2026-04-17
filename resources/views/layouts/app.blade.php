@@ -40,6 +40,13 @@
             background-color: #4338ca;
             color: #ffffff;
         }
+        .sidebar-link.collapsed {
+            justify-content: center;
+            padding: 0.625rem;
+        }
+        .sidebar-link.collapsed .link-text {
+            display: none;
+        }
         .btn-primary {
             display: inline-flex;
             align-items: center;
@@ -136,19 +143,25 @@
 <body class="bg-gray-50 min-h-screen">
 
 <div class="flex min-h-screen">
+    {{-- Overlay for mobile --}}
+    <div id="sidebar-overlay" class="fixed inset-0 bg-black bg-opacity-50 z-40 hidden md:hidden" onclick="toggleSidebar()"></div>
+
     {{-- Sidebar --}}
-    <aside class="w-64 bg-white border-r border-gray-200 flex flex-col fixed h-screen z-30">
-        {{-- Logo --}}
-        <div class="p-5 border-b border-gray-100">
+    <aside id="sidebar" class="w-64 bg-white border-r border-gray-200 flex flex-col fixed h-screen z-50 transform -translate-x-full md:translate-x-0 transition-transform duration-300 ease-in-out md:relative md:z-auto">
+        {{-- Header with collapse button --}}
+        <div class="p-5 border-b border-gray-100 flex items-center justify-between">
             <a href="{{ route('dashboard') }}" class="flex items-center gap-2">
-                <div class="h-9 w-9 bg-indigo-600 rounded-xl flex items-center justify-center">
-                    <span class="text-white font-bold text-sm">AC</span>
-                </div>
-                <div>
+                <img src="{{ asset('images/logo (2).png') }}" alt="ALSYCODE Logo" class="h-9 w-auto">
+                <div class="sidebar-logo-text">
                     <p class="font-bold text-gray-900 text-sm">ALSYCODE</p>
                     <p class="text-xs text-gray-400">Algoritma Pemrograman</p>
                 </div>
             </a>
+            <button id="sidebar-collapse-btn" class="hidden md:block p-1 rounded-md hover:bg-gray-100 transition-colors" onclick="toggleCollapse()">
+                <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                </svg>
+            </button>
         </div>
 
         {{-- Nav --}}
@@ -156,32 +169,32 @@
             @if(auth()->user()->isAdmin())
                 <a href="{{ route('admin.dashboard') }}" class="sidebar-link {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7h18M3 12h18M3 17h18"/></svg>
-                    Dashboard Admin
+                    <span class="link-text">Dashboard Admin</span>
                 </a>
                 <a href="{{ route('admin.users') }}" class="sidebar-link {{ request()->routeIs('admin.users*') ? 'active' : '' }}">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0"/></svg>
-                    Manajemen User
+                    <span class="link-text">Manajemen User</span>
                 </a>
             @else
                 <a href="{{ route('dashboard') }}" class="sidebar-link {{ request()->routeIs('dashboard') ? 'active' : '' }}">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
-                    Dashboard
+                    <span class="link-text">Dashboard</span>
                 </a>
                 <a href="{{ route('materi.index') }}" class="sidebar-link {{ request()->routeIs('materi*') ? 'active' : '' }}">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
-                    Materi
+                    <span class="link-text">Materi</span>
                 </a>
                 <a href="{{ route('pbl.index') }}" class="sidebar-link {{ request()->routeIs('pbl*') ? 'active' : '' }}">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
-                    Aktivitas PBL
+                    <span class="link-text">Aktivitas PBL</span>
                 </a>
                 <a href="{{ route('nilai.index') }}" class="sidebar-link {{ request()->routeIs('nilai*') ? 'active' : '' }}">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
-                    Nilai & Evaluasi
+                    <span class="link-text">Nilai & Evaluasi</span>
                 </a>
                 <a href="{{ route('compiler') }}" class="sidebar-link {{ request()->routeIs('compiler*') ? 'active' : '' }}">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/></svg>
-                    Mini Compiler
+                    <span class="link-text">Mini Compiler</span>
                 </a>
             @endif
         </nav>
@@ -207,9 +220,22 @@
     </aside>
 
     {{-- Main --}}
-    <main class="flex-1 ml-64">
-        <div class="max-w-5xl mx-auto px-6 py-8">
+    <main class="flex-1 md:ml-0 transition-all duration-300 ease-in-out" id="main-content">
+        {{-- Top Navbar for Mobile --}}
+        <nav class="bg-white border-b border-gray-200 px-4 py-3 md:hidden flex items-center justify-between">
+            <button id="mobile-menu-btn" class="p-2 rounded-md hover:bg-gray-100 transition-colors" onclick="toggleSidebar()">
+                <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+                </svg>
+            </button>
+            <div class="flex items-center gap-2">
+                <img src="{{ asset('images/logo (2).png') }}" alt="ALSYCODE Logo" class="h-6 w-auto">
+                <span class="font-bold text-gray-900 text-sm">ALSYCODE</span>
+            </div>
+            <div class="w-10"></div> {{-- Spacer for centering --}}
+        </nav>
 
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8">
             {{-- Flash Messages --}}
             @if(session('success'))
                 <div class="mb-4 p-4 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-lg text-sm flex items-center gap-2">
@@ -237,6 +263,65 @@
         </div>
     </main>
 </div>
+
+<script>
+    let sidebarCollapsed = false;
+    let sidebarOpen = false;
+
+    function toggleCollapse() {
+        const sidebar = document.getElementById('sidebar');
+        const main = document.getElementById('main-content');
+        const collapseBtn = document.getElementById('sidebar-collapse-btn');
+        const links = document.querySelectorAll('.sidebar-link');
+        const logoText = document.querySelector('.sidebar-logo-text');
+
+        sidebarCollapsed = !sidebarCollapsed;
+
+        if (sidebarCollapsed) {
+            sidebar.classList.remove('md:w-64');
+            sidebar.classList.add('md:w-16');
+            main.classList.remove('md:ml-0');
+            main.classList.add('md:ml-16');
+            collapseBtn.innerHTML = '<svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>';
+            links.forEach(link => link.classList.add('collapsed'));
+            logoText.style.display = 'none';
+        } else {
+            sidebar.classList.remove('md:w-16');
+            sidebar.classList.add('md:w-64');
+            main.classList.remove('md:ml-16');
+            main.classList.add('md:ml-0');
+            collapseBtn.innerHTML = '<svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>';
+            links.forEach(link => link.classList.remove('collapsed'));
+            logoText.style.display = 'block';
+        }
+    }
+
+    function toggleSidebar() {
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('sidebar-overlay');
+
+        sidebarOpen = !sidebarOpen;
+
+        if (sidebarOpen) {
+            sidebar.classList.remove('-translate-x-full');
+            overlay.classList.remove('hidden');
+        } else {
+            sidebar.classList.add('-translate-x-full');
+            overlay.classList.add('hidden');
+        }
+    }
+
+    // Close sidebar on window resize to desktop
+    window.addEventListener('resize', function() {
+        if (window.innerWidth >= 768) { // md breakpoint
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebar-overlay');
+            sidebar.classList.remove('-translate-x-full');
+            overlay.classList.add('hidden');
+            sidebarOpen = false;
+        }
+    });
+</script>
 
 @stack('scripts')
 </body>

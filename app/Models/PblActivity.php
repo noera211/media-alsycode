@@ -19,4 +19,9 @@ class PblActivity extends Model
     {
         return $this->hasMany(PblSubmission::class, 'activity_id');
     }
+
+    public function relatedMateri()
+    {
+        return $this->belongsTo(Materi::class, 'related_materi');
+    }
 }

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\LevelSetting;
+use App\Models\Materi;
 use App\Models\MateriProgress;
 use App\Models\PblActivity;
 use App\Models\PblSubmission;
@@ -16,8 +17,9 @@ class PblController extends Controller
     {
         /** @var User $user */
         $user          = Auth::user();
-        $activities    = PblActivity::orderBy('difficulty')->get();
+        $activities    = PblActivity::with('relatedMateri')->orderBy('difficulty')->get();
         $levelSettings = LevelSetting::pluck('min_materi', 'difficulty');
+        $materiList    = Materi::orderBy('title')->get(); // For dropdown
 
         $completedCount = 0;
         $accessible     = ['Mudah', 'Sedang', 'Sulit']; // guru bisa lihat semua
@@ -35,12 +37,14 @@ class PblController extends Controller
 
         return view('pbl.index', compact(
             'activities', 'levelSettings', 'completedCount',
-            'accessible', 'submittedIds'
+            'accessible', 'submittedIds', 'materiList'
         ));
     }
 
     public function show(PblActivity $pblActivity)
     {
+        $pblActivity->load('relatedMateri');
+        
         /** @var User $user */
         $user = Auth::user();
 
@@ -81,7 +85,7 @@ class PblController extends Controller
             'topic'          => 'required|string|max:255',
             'difficulty'     => 'required|in:Mudah,Sedang,Sulit',
             'problem'        => 'required|string',
-            'related_materi' => 'required|string|max:255',
+            'related_materi' => 'required|integer|exists:materi,id',
         ]);
 
         $data['created_by'] = Auth::id();
@@ -99,7 +103,7 @@ class PblController extends Controller
             'topic'          => 'required|string|max:255',
             'difficulty'     => 'required|in:Mudah,Sedang,Sulit',
             'problem'        => 'required|string',
-            'related_materi' => 'required|string|max:255',
+            'related_materi' => 'required|integer|exists:materi,id',
         ]);
 
         $pblActivity->update($data);

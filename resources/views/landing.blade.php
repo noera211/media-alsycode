@@ -41,11 +41,7 @@
     <nav class="bg-white/80 backdrop-blur-sm border-b border-gray-100 sticky top-0 z-50">
         <div class="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
             <div class="flex items-center gap-2.5">
-                <div class="h-8 w-8 bg-indigo-600 rounded-lg flex items-center justify-center">
-                    <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/>
-                    </svg>
-                </div>
+                <img src="{{ asset('images/logo (2).png') }}" alt="ALSYCODE Logo" class="h-9 w-auto">
                 <span class="font-bold text-gray-900 text-lg tracking-tight">ALSYCODE</span>
             </div>
             <a href="{{ route('login') }}"

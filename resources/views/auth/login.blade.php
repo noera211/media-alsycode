@@ -1,17 +1,19 @@
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login – ALSYCODE</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
+
 <body class="bg-gray-50 min-h-screen flex items-center justify-center px-4">
     <div class="w-full max-w-md">
         {{-- Header --}}
         <div class="text-center mb-8">
-            <div class="h-14 w-14 bg-indigo-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                <span class="text-white font-bold text-xl">AC</span>
+            <div class="flex justify-center">
+                <img src="{{ asset('images/logo (2).png') }}" alt="ALSYCODE Logo" class="h-9 w-auto">
             </div>
             <h1 class="text-2xl font-bold text-gray-900">Masuk ke ALSYCODE</h1>
             <p class="text-sm text-gray-500 mt-1">Platform Pembelajaran Algoritma Pemrograman</p>
@@ -19,9 +21,9 @@
 
         <div class="bg-white rounded-2xl border border-gray-200 shadow-sm p-8">
             {{-- Errors --}}
-            @if($errors->any())
+            @if ($errors->any())
                 <div class="mb-5 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
-                    @foreach($errors->all() as $err)
+                    @foreach ($errors->all() as $err)
                         <p>{{ $err }}</p>
                     @endforeach
                 </div>
@@ -42,7 +44,8 @@
                         placeholder="••••••••">
                 </div>
                 <div class="flex items-center gap-2">
-                    <input type="checkbox" name="remember" id="remember" class="rounded border-gray-300 text-indigo-600">
+                    <input type="checkbox" name="remember" id="remember"
+                        class="rounded border-gray-300 text-indigo-600">
                     <label for="remember" class="text-sm text-gray-600">Ingat saya</label>
                 </div>
                 <button type="submit"
@@ -79,4 +82,5 @@
         </p>
     </div>
 </body>
+
 </html>
