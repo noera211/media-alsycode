@@ -9,7 +9,7 @@
 <div class="grid lg:grid-cols-3 gap-6">
     {{-- Main --}}
     <div class="lg:col-span-2 space-y-5">
-        {{-- Problem --}}
+        {{-- Soal --}}
         <div class="card p-6">
             <div class="flex items-center gap-3 mb-4">
                 <div class="h-10 w-10 bg-indigo-100 rounded-xl flex items-center justify-center text-indigo-600 font-bold">PBL</div>
@@ -24,39 +24,101 @@
             <div class="text-sm leading-relaxed text-gray-700 whitespace-pre-line bg-gray-50 rounded-xl p-4">{{ $pblActivity->problem }}</div>
         </div>
 
-        {{-- Siswa: Upload Jawaban --}}
+        {{-- ── Siswa: Kumpulkan / Lihat / Edit Jawaban ── --}}
         @if(auth()->user()->isSiswa())
         <div class="card p-6">
-            <h2 class="font-semibold text-gray-800 mb-4">📤 Kumpulkan Jawaban</h2>
+            <h2 class="font-semibold text-gray-800 mb-4">📤 Jawaban Saya</h2>
 
-            @if($submission)
-            <div class="flex items-center gap-3 p-4 bg-emerald-50 border border-emerald-200 rounded-xl">
+            @if($submission && !request('edit'))
+            {{-- ── Sudah Dikumpulkan ── --}}
+            <div class="flex items-center gap-3 p-4 bg-emerald-50 border border-emerald-200 rounded-xl mb-4">
                 <span class="text-emerald-500 text-xl">✓</span>
-                <div>
-                    <p class="text-sm font-semibold text-emerald-700">Jawaban sudah dikumpulkan!</p>
+                <div class="flex-1">
+                    <p class="text-sm font-semibold text-emerald-700">Jawaban sudah dikumpulkan</p>
                     <p class="text-xs text-emerald-600">{{ \Carbon\Carbon::parse($submission->submitted_at)->format('d M Y, H:i') }}</p>
                 </div>
+                {{-- Tombol Edit (hanya jika belum dinilai) --}}
+                @if($submission->nilai === null)
+                <a href="{{ route('pbl.show', $pblActivity) }}?edit=1"
+                   class="btn-outline text-xs flex-shrink-0">✏ Edit Jawaban</a>
+                @endif
             </div>
 
+            {{-- Tampilkan jawaban yang sudah dikumpulkan --}}
+            @if($submission->answer)
+            <div class="bg-gray-50 rounded-xl p-4 mb-4">
+                <p class="text-xs font-medium text-gray-500 mb-2">Jawaban Anda:</p>
+                <p class="text-sm text-gray-700 whitespace-pre-line">{{ $submission->answer }}</p>
+            </div>
+            @endif
+
+            @if($submission->file_path)
+            <div class="mb-4">
+                <a href="{{ route('pbl.submission.download', $submission) }}"
+                   class="text-xs text-indigo-500 hover:underline flex items-center gap-1">
+                    📎 Lihat file yang dikumpulkan ↗
+                </a>
+            </div>
+            @endif
+
+            {{-- Feedback dari guru --}}
             @if($submission->feedback || $submission->nilai !== null)
-            <div class="mt-4 p-4 border border-gray-200 rounded-xl">
-                <p class="text-sm font-semibold mb-2">📋 Feedback Guru</p>
+            <div class="mt-2 p-4 border border-indigo-100 bg-indigo-50 rounded-xl">
+                <p class="text-sm font-semibold text-indigo-800 mb-3">📋 Feedback Guru</p>
                 @if($submission->nilai !== null)
                 <div class="flex items-center gap-3 mb-3">
                     <span class="text-3xl font-bold text-indigo-600">{{ $submission->nilai }}</span>
                     <span class="text-sm text-gray-500">/ 100</span>
-                    <span class="text-xs px-2 py-1 rounded-full font-medium {{ $submission->nilai >= 80 ? 'bg-emerald-100 text-emerald-700' : ($submission->nilai >= 60 ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700') }}">
+                    <span class="text-xs px-2 py-1 rounded-full font-medium
+                        {{ $submission->nilai >= 80 ? 'bg-emerald-100 text-emerald-700'
+                        : ($submission->nilai >= 60 ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700') }}">
                         {{ $submission->nilai >= 80 ? 'Sangat Baik' : ($submission->nilai >= 60 ? 'Cukup' : 'Perlu Perbaikan') }}
                     </span>
                 </div>
                 @endif
                 @if($submission->feedback)
-                <p class="text-sm text-gray-600">{{ $submission->feedback }}</p>
+                <p class="text-sm text-gray-700">{{ $submission->feedback }}</p>
                 @endif
             </div>
+            @else
+            <p class="text-xs text-gray-400 mt-2">Menunggu penilaian dari guru...</p>
             @endif
 
+            @elseif($submission && request('edit') && $submission->nilai === null)
+            {{-- ── Mode Edit Submission ── --}}
+            <div class="p-3 bg-amber-50 border border-amber-200 rounded-lg mb-4 flex items-center gap-2">
+                <span class="text-amber-500">✏</span>
+                <p class="text-xs text-amber-700 font-medium">Kamu sedang mengedit jawaban yang sudah dikumpulkan.</p>
+            </div>
+
+            <form action="{{ route('pbl.submit.update', [$pblActivity, $submission]) }}" method="POST" enctype="multipart/form-data" class="space-y-4">
+                @csrf
+                @method('PUT')
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Penjelasan Jawaban</label>
+                    <textarea name="answer" rows="5"
+                        class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                        placeholder="Tuliskan penjelasan algoritma Anda...">{{ $submission->answer }}</textarea>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Upload File Baru (opsional, gantikan file lama)</label>
+                    @if($submission->file_path)
+                    <p class="text-xs text-gray-400 mb-2">File saat ini:
+                        <a href="{{ asset('storage/'.$submission->file_path) }}" target="_blank" class="text-indigo-500 hover:underline">📎 Lihat ↗</a>
+                    </p>
+                    @endif
+                    <input type="file" name="file" accept=".pdf,.doc,.docx,.txt"
+                        class="w-full border border-dashed border-gray-300 rounded-lg px-3 py-4 text-sm text-gray-500 cursor-pointer file:mr-3 file:py-1 file:px-3 file:rounded-md file:border-0 file:bg-indigo-50 file:text-indigo-600 file:text-xs file:font-medium">
+                    <p class="text-xs text-gray-400 mt-1">PDF/DOC/TXT, maks 5MB. Kosongkan jika tidak ingin mengganti file.</p>
+                </div>
+                <div class="flex gap-3">
+                    <button type="submit" class="btn-primary flex-1 text-center">💾 Simpan Perubahan</button>
+                    <a href="{{ route('pbl.show', $pblActivity) }}" class="btn-outline text-center px-4">Batal</a>
+                </div>
+            </form>
+
             @else
+            {{-- ── Belum Pernah Submit ── --}}
             <form action="{{ route('pbl.submit', $pblActivity) }}" method="POST" enctype="multipart/form-data" class="space-y-4">
                 @csrf
                 <div>
@@ -75,7 +137,7 @@
         </div>
         @endif
 
-        {{-- Guru: Daftar Submission --}}
+        {{-- ── Guru: Daftar Submission ── --}}
         @if(auth()->user()->isGuru() && $submissions)
         <div class="card">
             <div class="p-5 border-b border-gray-100 flex items-center justify-between">
@@ -91,7 +153,9 @@
                             <p class="text-xs text-gray-400">{{ \Carbon\Carbon::parse($sub->submitted_at)->format('d M Y, H:i') }}</p>
                         </div>
                         @if($sub->nilai !== null)
-                        <span class="text-sm font-bold px-3 py-1 rounded-lg {{ $sub->nilai >= 80 ? 'bg-emerald-100 text-emerald-700' : ($sub->nilai >= 60 ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700') }}">
+                        <span class="text-sm font-bold px-3 py-1 rounded-lg
+                            {{ $sub->nilai >= 80 ? 'bg-emerald-100 text-emerald-700'
+                            : ($sub->nilai >= 60 ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700') }}">
                             {{ $sub->nilai }}
                         </span>
                         @else
@@ -106,10 +170,9 @@
                     @endif
                     @if($sub->file_path)
                     <p class="text-xs text-indigo-500 mb-3">
-                        <a href="{{ asset('storage/'.$sub->file_path) }}" target="_blank">📎 Unduh File</a>
+                        <a href="{{ route('pbl.submission.download', $sub) }}">📎 Unduh File</a>
                     </p>
                     @endif
-                    {{-- Grade form --}}
                     <form action="{{ route('pbl.grade', $sub) }}" method="POST" class="flex gap-2 items-end">
                         @csrf
                         <div class="flex-1">

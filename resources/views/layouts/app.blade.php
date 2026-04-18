@@ -147,7 +147,7 @@
     <div id="sidebar-overlay" class="fixed inset-0 bg-black bg-opacity-50 z-40 hidden md:hidden" onclick="toggleSidebar()"></div>
 
     {{-- Sidebar --}}
-    <aside id="sidebar" class="w-64 bg-white border-r border-gray-200 flex flex-col fixed h-screen z-50 transform -translate-x-full md:translate-x-0 transition-transform duration-300 ease-in-out md:relative md:z-auto">
+    <aside id="sidebar" class="w-64 bg-white border-r border-gray-200 flex flex-col fixed h-screen z-50 transform -translate-x-full md:translate-x-0 transition-transform duration-300 ease-in-out">
         {{-- Header with collapse button --}}
         <div class="p-5 border-b border-gray-100 flex items-center justify-between">
             <a href="{{ route('dashboard') }}" class="flex items-center gap-2">
@@ -200,29 +200,47 @@
         </nav>
 
         {{-- User Info --}}
-        <div class="p-4 border-t border-gray-100">
-            <div class="flex items-center gap-3 mb-3">
+        <div class="border-t border-gray-100" id="user-info-wrap">
+            {{-- Normal (expanded) --}}
+            <div id="user-info-expanded" class="p-4">
+                <div class="flex items-center gap-3 mb-3">
+                    <div class="h-9 w-9 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-bold text-sm flex-shrink-0">
+                        {{ strtoupper(substr(auth()->user()->name, 0, 1)) }}
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <p class="text-sm font-semibold text-gray-900 truncate">{{ auth()->user()->name }}</p>
+                        <p class="text-xs text-gray-400 capitalize">{{ auth()->user()->role }}</p>
+                    </div>
+                </div>
+                <form action="{{ route('logout') }}" method="POST">
+                    @csrf
+                    <button type="submit" class="w-full text-left text-sm text-red-500 hover:text-red-700 font-medium py-1">
+                        ← Keluar
+                    </button>
+                </form>
+            </div>
+            {{-- Collapsed: hanya avatar + logout icon --}}
+            <div id="user-info-collapsed" class="hidden flex-col items-center py-4 gap-3">
                 <div class="h-9 w-9 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-bold text-sm">
                     {{ strtoupper(substr(auth()->user()->name, 0, 1)) }}
                 </div>
-                <div class="flex-1 min-w-0">
-                    <p class="text-sm font-semibold text-gray-900 truncate">{{ auth()->user()->name }}</p>
-                    <p class="text-xs text-gray-400 capitalize">{{ auth()->user()->role }}</p>
-                </div>
+                <form action="{{ route('logout') }}" method="POST">
+                    @csrf
+                    <button type="submit" title="Keluar" class="text-red-400 hover:text-red-600 transition-colors">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                  d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+                        </svg>
+                    </button>
+                </form>
             </div>
-            <form action="{{ route('logout') }}" method="POST">
-                @csrf
-                <button type="submit" class="w-full text-left text-sm text-red-500 hover:text-red-700 font-medium py-1">
-                    ← Keluar
-                </button>
-            </form>
         </div>
     </aside>
 
     {{-- Main --}}
-    <main class="flex-1 md:ml-0 transition-all duration-300 ease-in-out" id="main-content">
+    <main class="flex-1 ml-0 md:ml-64 transition-all duration-300 ease-in-out min-w-0" id="main-content">
         {{-- Top Navbar for Mobile --}}
-        <nav class="bg-white border-b border-gray-200 px-4 py-3 md:hidden flex items-center justify-between">
+        <nav class="bg-white border-b border-gray-200 px-4 py-3 md:hidden flex items-center justify-between sticky top-0 z-20">
             <button id="mobile-menu-btn" class="p-2 rounded-md hover:bg-gray-100 transition-colors" onclick="toggleSidebar()">
                 <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
@@ -232,10 +250,10 @@
                 <img src="{{ asset('images/logo (2).png') }}" alt="ALSYCODE Logo" class="h-6 w-auto">
                 <span class="font-bold text-gray-900 text-sm">ALSYCODE</span>
             </div>
-            <div class="w-10"></div> {{-- Spacer for centering --}}
+            <div class="w-10"></div>
         </nav>
 
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8">
+        <div class="w-full px-4 sm:px-6 lg:px-8 py-6 md:py-8">
             {{-- Flash Messages --}}
             @if(session('success'))
                 <div class="mb-4 p-4 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-lg text-sm flex items-center gap-2">
@@ -280,19 +298,25 @@
         if (sidebarCollapsed) {
             sidebar.classList.remove('md:w-64');
             sidebar.classList.add('md:w-16');
-            main.classList.remove('md:ml-0');
+            main.classList.remove('md:ml-64');
             main.classList.add('md:ml-16');
             collapseBtn.innerHTML = '<svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>';
             links.forEach(link => link.classList.add('collapsed'));
             logoText.style.display = 'none';
+            document.getElementById('user-info-expanded').classList.add('hidden');
+            document.getElementById('user-info-collapsed').classList.remove('hidden');
+            document.getElementById('user-info-collapsed').classList.add('flex');
         } else {
             sidebar.classList.remove('md:w-16');
             sidebar.classList.add('md:w-64');
             main.classList.remove('md:ml-16');
-            main.classList.add('md:ml-0');
+            main.classList.add('md:ml-64');
             collapseBtn.innerHTML = '<svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>';
             links.forEach(link => link.classList.remove('collapsed'));
             logoText.style.display = 'block';
+            document.getElementById('user-info-expanded').classList.remove('hidden');
+            document.getElementById('user-info-collapsed').classList.add('hidden');
+            document.getElementById('user-info-collapsed').classList.remove('flex');
         }
     }
 
@@ -311,9 +335,8 @@
         }
     }
 
-    // Close sidebar on window resize to desktop
     window.addEventListener('resize', function() {
-        if (window.innerWidth >= 768) { // md breakpoint
+        if (window.innerWidth >= 768) {
             const sidebar = document.getElementById('sidebar');
             const overlay = document.getElementById('sidebar-overlay');
             sidebar.classList.remove('-translate-x-full');
