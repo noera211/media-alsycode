@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\PblSubmission;
+use App\Models\StudentGrade;
 use App\Models\TestQuestion;
 use App\Models\TestResult;
 use App\Models\User;
@@ -19,53 +20,84 @@ class NilaiController extends Controller
         $user = Auth::user();
 
         if ($user && $user->isGuru()) {
-            // Guru lihat semua siswa + nilai PBL mereka
             $siswaList = User::where('role', 'siswa')
                 ->where('is_active', true)->get();
 
-            // Ambil submission terakhir tiap siswa
-            $nilaiMap = PblSubmission::whereIn('student_id', $siswaList->pluck('id'))
+            $siswaIds = $siswaList->pluck('id');
+
+            // Nilai PBL manual dari guru (tabel student_grades)
+            $gradeMap = StudentGrade::whereIn('student_id', $siswaIds)
+                ->get()->keyBy('student_id');
+
+            // Semua submission per siswa (untuk referensi guru)
+            $submissionMap = PblSubmission::with('activity')
+                ->whereIn('student_id', $siswaIds)
                 ->whereNotNull('nilai')
-                ->orderByDesc('graded_at')
+                ->orderByDesc('nilai')
                 ->get()
                 ->groupBy('student_id');
 
+            // Nilai evaluasi: persentase dari test result terakhir per siswa
+            $testMap = TestResult::whereIn('student_id', $siswaIds)
+                ->orderByDesc('taken_at')
+                ->get()
+                ->groupBy('student_id')
+                ->map(fn($results) => $results->first());
+
             $questions = TestQuestion::all();
 
-            return view('nilai.guru', compact('siswaList', 'nilaiMap', 'questions'));
+            return view('nilai.guru', compact(
+                'siswaList', 'gradeMap', 'submissionMap', 'testMap', 'questions'
+            ));
         }
 
         // Siswa: lihat nilai sendiri
         $submissions = PblSubmission::with('activity')
             ->where('student_id', $user->id)
-            ->orderByDesc('submitted_at')->get();
+            ->whereNotNull('nilai')
+            ->orderByDesc('nilai')->get();
+
+        $grade         = StudentGrade::where('student_id', $user->id)->first();
+        $nilaiPbl      = $grade?->nilai_pbl;
+        $catatanPbl    = $grade?->catatan_pbl;
 
         $lastTestResult = TestResult::where('student_id', $user->id)
             ->latest('taken_at')->first();
+        $nilaiEvaluasi = $lastTestResult ? $lastTestResult->persentase : null;
+
+        $nilaiAkhir = null;
+        if ($nilaiPbl !== null && $nilaiEvaluasi !== null) {
+            $nilaiAkhir = round(($nilaiPbl + $nilaiEvaluasi) / 2);
+        }
 
         $questions = TestQuestion::all();
 
-        return view('nilai.siswa', compact('submissions', 'lastTestResult', 'questions'));
+        return view('nilai.siswa', compact(
+            'submissions', 'lastTestResult', 'questions',
+            'nilaiPbl', 'catatanPbl', 'nilaiEvaluasi', 'nilaiAkhir'
+        ));
     }
 
-    // ─── Guru: Update Nilai Siswa ────────────────────────────────────────
+    // ─── Guru: Input Nilai PBL Manual ────────────────────────────────────
 
-    public function updateNilai(Request $request, PblSubmission $submission)
+    public function updateNilaiPbl(Request $request, User $siswa)
     {
         $this->authorizeGuru();
 
         $request->validate([
-            'nilai'    => 'nullable|integer|min:0|max:100',
-            'feedback' => 'nullable|string',
+            'nilai_pbl'    => 'nullable|integer|min:0|max:100',
+            'catatan_pbl'  => 'nullable|string|max:255',
         ]);
 
-        $submission->update([
-            'nilai'      => $request->nilai,
-            'feedback'   => $request->feedback,
-            'graded_at'  => now(),
-        ]);
+        StudentGrade::updateOrCreate(
+            ['student_id' => $siswa->id],
+            [
+                'nilai_pbl'   => $request->nilai_pbl,
+                'catatan_pbl' => $request->catatan_pbl,
+            ]
+        );
 
-        return back()->with('success', 'Nilai berhasil disimpan.');
+        return back()->with('success', 'Nilai PBL berhasil disimpan.');
     }
 
     // ─── Guru: CRUD Bank Soal ────────────────────────────────────────────
@@ -121,7 +153,7 @@ class NilaiController extends Controller
     public function submitTest(Request $request)
     {
         /** @var User $user */
-        $user      = Auth::user();
+        $user = Auth::user();
         if (!$user || !$user->isSiswa()) abort(403);
 
         $questions = TestQuestion::all();
@@ -150,7 +182,6 @@ class NilaiController extends Controller
         ]);
 
         return redirect()->route('nilai.index')
-            ->with('test_result_id', $result->id)
             ->with('success', "Test selesai! Skor Anda: {$result->persentase}/100");
     }
 
@@ -158,7 +189,6 @@ class NilaiController extends Controller
     {
         /** @var User $user */
         $user = Auth::user();
-        
         if (!$user || (!$user->isGuru() && !$user->isAdmin())) {
             abort(403);
         }

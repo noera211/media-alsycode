@@ -54,7 +54,8 @@
 
             @if($submission->file_path)
             <div class="mb-4">
-                <a href="{{ route('pbl.submission.download', $submission) }}"
+                <a href="{{ route('pbl.submission.view', $submission) }}"
+                   target="_blank"
                    class="text-xs text-indigo-500 hover:underline flex items-center gap-1">
                     📎 Lihat file yang dikumpulkan ↗
                 </a>
@@ -169,9 +170,17 @@
                     </div>
                     @endif
                     @if($sub->file_path)
-                    <p class="text-xs text-indigo-500 mb-3">
-                        <a href="{{ route('pbl.submission.download', $sub) }}">📎 Unduh File</a>
-                    </p>
+                    <div class="flex items-center gap-3 mb-3">
+                        <a href="{{ route('pbl.submission.view', $sub) }}"
+                           target="_blank"
+                           class="text-xs text-indigo-600 hover:underline flex items-center gap-1">
+                            👁 Lihat File
+                        </a>
+                        <a href="{{ route('pbl.submission.download', $sub) }}"
+                           class="text-xs text-gray-500 hover:underline flex items-center gap-1">
+                            ↓ Unduh
+                        </a>
+                    </div>
                     @endif
                     <form action="{{ route('pbl.grade', $sub) }}" method="POST" class="flex gap-2 items-end">
                         @csrf

@@ -82,9 +82,13 @@ Route::middleware(['auth', 'role:guru,siswa'])->group(function () {
         Route::get('/', [PblController::class, 'index'])
             ->name('index');
 
-        // Download file submission
+        // Download file submission (siswa)
         Route::get('/submission/{submission}/download', [PblController::class, 'downloadSubmission'])
             ->name('submission.download');
+
+        // Preview/view file submission di browser (guru)
+        Route::get('/submission/{submission}/view', [PblController::class, 'viewSubmission'])
+            ->name('submission.view');
 
         // Guru nilai submission
         Route::post('/submission/{submission}/grade', [PblController::class, 'grade'])
@@ -127,8 +131,8 @@ Route::middleware(['auth', 'role:guru,siswa'])->group(function () {
         Route::get('/', [NilaiController::class, 'index'])
             ->name('index');
 
-        Route::post('/submission/{submission}', [NilaiController::class, 'updateNilai'])
-            ->name('update');
+        Route::post('/pbl/{siswa}', [NilaiController::class, 'updateNilaiPbl'])
+            ->name('pbl.update');
 
         Route::post('/test', [NilaiController::class, 'submitTest'])
             ->name('test.submit');

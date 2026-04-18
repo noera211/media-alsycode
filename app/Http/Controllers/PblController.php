@@ -349,14 +349,68 @@ class PblController extends Controller
         ]);
 
         $extension = pathinfo($submission->file_path, PATHINFO_EXTENSION);
-
-        $fileName = 'submission_' . $submission->id;
+        $fileName  = 'submission_' . $submission->id;
 
         if ($extension) {
             $fileName .= '.' . $extension;
         }
 
-        return Storage::disk('local')->download($submission->file_path, $fileName);
+        $fullPath = Storage::disk('local')->path($submission->file_path);
+
+        return response()->download($fullPath, $fileName);
+    }
+
+    public function viewSubmission(Request $request, PblSubmission $submission)
+    {
+        /** @var User $user */
+        $user = Auth::user();
+
+        $isOwner = $user && $user->isSiswa() && $submission->student_id === $user->id;
+        $isGuru  = $user && ($user->isGuru() || $user->isAdmin());
+
+        if (!$isOwner && !$isGuru) {
+            abort(403, 'Anda tidak memiliki akses ke file ini.');
+        }
+
+        if (!$submission->file_path || !Storage::disk('local')->exists($submission->file_path)) {
+            abort(404, 'File tidak ditemukan.');
+        }
+
+        SubmissionAuditLog::create([
+            'user_id'       => $user->id,
+            'submission_id' => $submission->id,
+            'action'        => 'viewed',
+            'ip_address'    => $request->ip(),
+            'user_agent'    => $request->header('User-Agent'),
+            'description'   => $isGuru
+                ? 'Guru/Admin melihat file siswa'
+                : 'Siswa melihat file miliknya',
+        ]);
+
+        $extension = strtolower(pathinfo($submission->file_path, PATHINFO_EXTENSION));
+        $fullPath  = Storage::disk('local')->path($submission->file_path);
+        $mimeMap   = [
+            'pdf'  => 'application/pdf',
+            'png'  => 'image/png',
+            'jpg'  => 'image/jpeg',
+            'jpeg' => 'image/jpeg',
+            'gif'  => 'image/gif',
+            'webp' => 'image/webp',
+        ];
+
+        $mimeType = $mimeMap[$extension] ?? mime_content_type($fullPath);
+
+        // Jika tipe file tidak bisa di-preview di browser, fallback ke download
+        $previewable = in_array($extension, ['pdf', 'png', 'jpg', 'jpeg', 'gif', 'webp']);
+        if (!$previewable) {
+            $fileName = 'submission_' . $submission->id . '.' . $extension;
+            return response()->download($fullPath, $fileName);
+        }
+
+        return response()->file($fullPath, [
+            'Content-Type'        => $mimeType,
+            'Content-Disposition' => 'inline',
+        ]);
     }
 
     private function checkStorageQuota()
