@@ -134,6 +134,9 @@ Route::middleware(['auth', 'role:guru,siswa'])->group(function () {
         Route::post('/pbl/{siswa}', [NilaiController::class, 'updateNilaiPbl'])
             ->name('pbl.update');
 
+        Route::post('/toggle-test/{siswa}', [NilaiController::class, 'toggleTest'])
+            ->name('toggle.test');
+
         Route::post('/test', [NilaiController::class, 'submitTest'])
             ->name('test.submit');
 

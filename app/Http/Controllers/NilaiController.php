@@ -25,11 +25,9 @@ class NilaiController extends Controller
 
             $siswaIds = $siswaList->pluck('id');
 
-            // Nilai PBL manual dari guru (tabel student_grades)
             $gradeMap = StudentGrade::whereIn('student_id', $siswaIds)
                 ->get()->keyBy('student_id');
 
-            // Semua submission per siswa (untuk referensi guru)
             $submissionMap = PblSubmission::with('activity')
                 ->whereIn('student_id', $siswaIds)
                 ->whereNotNull('nilai')
@@ -37,7 +35,6 @@ class NilaiController extends Controller
                 ->get()
                 ->groupBy('student_id');
 
-            // Nilai evaluasi: persentase dari test result terakhir per siswa
             $testMap = TestResult::whereIn('student_id', $siswaIds)
                 ->orderByDesc('taken_at')
                 ->get()
@@ -51,7 +48,7 @@ class NilaiController extends Controller
             ));
         }
 
-        // Siswa: lihat nilai sendiri
+        // Siswa
         $submissions = PblSubmission::with('activity')
             ->where('student_id', $user->id)
             ->whereNotNull('nilai')
@@ -60,6 +57,12 @@ class NilaiController extends Controller
         $grade         = StudentGrade::where('student_id', $user->id)->first();
         $nilaiPbl      = $grade?->nilai_pbl;
         $catatanPbl    = $grade?->catatan_pbl;
+
+        // Cek apakah siswa boleh test:
+        // - Belum punya record grade → boleh (default)
+        // - is_test_open = true → boleh
+        // - is_test_open = false → sudah dikunci
+        $isTestOpen = $grade === null || $grade->is_test_open;
 
         $lastTestResult = TestResult::where('student_id', $user->id)
             ->latest('taken_at')->first();
@@ -74,7 +77,7 @@ class NilaiController extends Controller
 
         return view('nilai.siswa', compact(
             'submissions', 'lastTestResult', 'questions',
-            'nilaiPbl', 'catatanPbl', 'nilaiEvaluasi', 'nilaiAkhir'
+            'nilaiPbl', 'catatanPbl', 'nilaiEvaluasi', 'nilaiAkhir', 'isTestOpen'
         ));
     }
 
@@ -85,8 +88,8 @@ class NilaiController extends Controller
         $this->authorizeGuru();
 
         $request->validate([
-            'nilai_pbl'    => 'nullable|integer|min:0|max:100',
-            'catatan_pbl'  => 'nullable|string|max:255',
+            'nilai_pbl'   => 'nullable|integer|min:0|max:100',
+            'catatan_pbl' => 'nullable|string|max:255',
         ]);
 
         StudentGrade::updateOrCreate(
@@ -98,6 +101,24 @@ class NilaiController extends Controller
         );
 
         return back()->with('success', 'Nilai PBL berhasil disimpan.');
+    }
+
+    // ─── Guru: Toggle Akses Test Siswa ───────────────────────────────────
+
+    public function toggleTest(User $siswa)
+    {
+        $this->authorizeGuru();
+
+        $grade = StudentGrade::firstOrCreate(
+            ['student_id' => $siswa->id],
+            ['is_test_open' => true]
+        );
+
+        $grade->update(['is_test_open' => !$grade->is_test_open]);
+
+        $status = $grade->is_test_open ? 'dibuka' : 'dikunci';
+
+        return back()->with('success', "Akses test {$siswa->name} berhasil {$status}.");
     }
 
     // ─── Guru: CRUD Bank Soal ────────────────────────────────────────────
@@ -156,6 +177,14 @@ class NilaiController extends Controller
         $user = Auth::user();
         if (!$user || !$user->isSiswa()) abort(403);
 
+        // Cek apakah siswa boleh mengerjakan test
+        $grade = StudentGrade::where('student_id', $user->id)->first();
+        $isTestOpen = $grade === null || $grade->is_test_open;
+
+        if (!$isTestOpen) {
+            return back()->with('error', 'Akses test kamu sudah dikunci. Hubungi guru untuk membuka kembali.');
+        }
+
         $questions = TestQuestion::all();
         $answers   = $request->input('answers', []);
         $score     = 0;
@@ -180,6 +209,12 @@ class NilaiController extends Controller
             'answers'         => $detail,
             'taken_at'        => now(),
         ]);
+
+        // Kunci test setelah selesai mengerjakan
+        StudentGrade::updateOrCreate(
+            ['student_id' => $user->id],
+            ['is_test_open' => false]
+        );
 
         return redirect()->route('nilai.index')
             ->with('success', "Test selesai! Skor Anda: {$result->persentase}/100");

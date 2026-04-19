@@ -53,6 +53,7 @@
                                 Nilai Akhir
                                 <span class="block text-gray-400 font-normal">(rata-rata)</span>
                             </th>
+                            <th class="text-center px-5 py-3 text-xs font-semibold text-gray-500">Status Test</th>
                             <th class="text-center px-5 py-3 text-xs font-semibold text-gray-500">Aksi</th>
                         </tr>
                     </thead>
@@ -66,6 +67,8 @@
                             $nilaiAkhir    = ($nilaiPbl !== null && $nilaiEvaluasi !== null)
                                 ? round(($nilaiPbl + $nilaiEvaluasi) / 2) : null;
                             $subsSiswa     = $submissionMap[$siswa->id] ?? collect();
+                            $isTestOpen    = $grade === null || $grade->is_test_open;
+                            $sudahTest     = $testResult !== null;
                         @endphp
                         <tr class="hover:bg-gray-50">
                             <td class="px-5 py-4 text-gray-400">{{ $i + 1 }}</td>
@@ -124,19 +127,60 @@
                                 @endif
                             </td>
 
+                            {{-- Status Test --}}
+                            <td class="px-5 py-4 text-center">
+                                @if($sudahTest)
+                                    <span class="inline-flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-full bg-emerald-100 text-emerald-700">
+                                        ✓ Sudah test
+                                    </span>
+                                @elseif(!$isTestOpen)
+                                    <span class="inline-flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-full bg-gray-100 text-gray-500">
+                                        🔒 Dikunci
+                                    </span>
+                                @else
+                                    <span class="inline-flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-full bg-blue-100 text-blue-700">
+                                        Terbuka
+                                    </span>
+                                @endif
+                            </td>
+
                             {{-- Aksi --}}
                             <td class="px-5 py-4 text-center">
-                                <button onclick="openPblModal({{ $siswa->id }}, '{{ $siswa->name }}', {{ $nilaiPbl ?? 'null' }}, '{{ addslashes($grade?->catatan_pbl ?? '') }}')"
-                                    class="text-xs btn-outline px-3 py-1.5">
-                                    {{ $nilaiPbl !== null ? '✏ Edit PBL' : '+ Beri Nilai PBL' }}
-                                </button>
+                                <div class="flex items-center justify-center gap-2">
+                                    <button onclick="openPblModal({{ $siswa->id }}, '{{ $siswa->name }}', {{ $nilaiPbl ?? 'null' }}, '{{ addslashes($grade?->catatan_pbl ?? '') }}')"
+                                        class="text-xs btn-outline px-3 py-1.5">
+                                        {{ $nilaiPbl !== null ? '✏ Edit PBL' : '+ Beri Nilai PBL' }}
+                                    </button>
+                                    @if($sudahTest)
+                                    <form action="{{ route('nilai.toggle.test', $siswa) }}" method="POST">
+                                        @csrf
+                                        <button type="submit" class="text-xs btn-outline px-3 py-1.5 border-blue-300 text-blue-600 hover:bg-blue-50">
+                                            🔓 Buka Ulang
+                                        </button>
+                                    </form>
+                                    @elseif(!$isTestOpen)
+                                    <form action="{{ route('nilai.toggle.test', $siswa) }}" method="POST">
+                                        @csrf
+                                        <button type="submit" class="text-xs btn-outline px-3 py-1.5 border-blue-300 text-blue-600 hover:bg-blue-50">
+                                            🔓 Buka Test
+                                        </button>
+                                    </form>
+                                    @else
+                                    <form action="{{ route('nilai.toggle.test', $siswa) }}" method="POST">
+                                        @csrf
+                                        <button type="submit" class="text-xs btn-outline px-3 py-1.5 border-red-300 text-red-500 hover:bg-red-50">
+                                            🔒 Kunci
+                                        </button>
+                                    </form>
+                                    @endif
+                                </div>
                             </td>
                         </tr>
                         @endforeach
 
                         @if($siswaList->isEmpty())
                         <tr>
-                            <td colspan="6" class="px-5 py-10 text-center text-gray-400 text-sm">Belum ada siswa terdaftar.</td>
+                            <td colspan="7" class="px-5 py-10 text-center text-gray-400 text-sm">Belum ada siswa terdaftar.</td>
                         </tr>
                         @endif
                     </tbody>

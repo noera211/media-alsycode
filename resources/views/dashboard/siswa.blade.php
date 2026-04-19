@@ -41,24 +41,24 @@
 {{-- Level Access --}}
 <div class="card p-6 mb-6">
     <h2 class="font-semibold text-gray-800 mb-4">Level Aktivitas PBL</h2>
-    <div class="grid grid-cols-3 gap-4">
-        @foreach(['Mudah' => ['color' => 'emerald', 'icon' => '🟢'], 'Sedang' => ['color' => 'amber', 'icon' => '🟡'], 'Sulit' => ['color' => 'red', 'icon' => '🔴']] as $diff => $cfg)
+    <div class="flex flex-col sm:grid sm:grid-cols-3 gap-3">
+        @foreach(['Mudah' => ['icon' => '🟢'], 'Sedang' => ['icon' => '🟡'], 'Sulit' => ['icon' => '🔴']] as $diff => $cfg)
             @php
                 $min = $levelSettings[$diff] ?? 1;
                 $unlocked = in_array($diff, $accessible);
-                $pct = min(100, $completedCount > 0 ? round(($completedCount / $min) * 100) : 0);
+                $pct = min(100, $min > 0 ? round(($completedCount / $min) * 100) : 100);
             @endphp
             <div class="rounded-xl border p-4 {{ $unlocked ? 'border-indigo-200 bg-indigo-50' : 'border-gray-200 bg-gray-50' }}">
                 <div class="flex items-center gap-2 mb-2">
-                    <span>{{ $cfg['icon'] }}</span>
+                    <span class="text-base">{{ $cfg['icon'] }}</span>
                     <span class="text-sm font-semibold text-gray-800">{{ $diff }}</span>
                     @if($unlocked)
-                        <span class="ml-auto text-emerald-500 text-xs">✓ Terbuka</span>
+                        <span class="ml-auto text-emerald-500 text-xs font-medium">✓ Terbuka</span>
                     @else
                         <span class="ml-auto text-gray-400 text-xs">🔒 Terkunci</span>
                     @endif
                 </div>
-                <div class="w-full bg-gray-200 rounded-full h-1.5 mb-1">
+                <div class="w-full bg-gray-200 rounded-full h-1.5 mb-2">
                     <div class="bg-indigo-400 h-1.5 rounded-full" style="width: {{ $pct }}%"></div>
                 </div>
                 <p class="text-xs text-gray-400">Min. {{ $min }} materi</p>

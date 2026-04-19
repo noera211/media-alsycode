@@ -19,21 +19,21 @@
         <h2 class="font-semibold text-gray-800 text-sm">Progress Level</h2>
         <span class="text-sm text-indigo-600 font-medium">{{ $completedCount }} materi selesai</span>
     </div>
-    <div class="grid grid-cols-3 gap-3">
+    <div class="grid grid-cols-3 gap-2 sm:gap-3">
         @foreach(['Mudah' => '🟢', 'Sedang' => '🟡', 'Sulit' => '🔴'] as $diff => $icon)
             @php $min = $levelSettings[$diff] ?? 1; $unlocked = in_array($diff, $accessible); @endphp
-            <div class="rounded-lg border p-3 {{ $unlocked ? 'border-indigo-200 bg-indigo-50' : 'border-gray-200 bg-gray-50' }}">
-                <div class="flex items-center gap-2 mb-1.5">
-                    <span class="text-sm">{{ $icon }}</span>
-                    <span class="text-xs font-semibold text-gray-700">{{ $diff }}</span>
-                    <span class="ml-auto text-xs {{ $unlocked ? 'text-emerald-500' : 'text-gray-400' }}">
+            <div class="rounded-lg border p-2 sm:p-3 {{ $unlocked ? 'border-indigo-200 bg-indigo-50' : 'border-gray-200 bg-gray-50' }}">
+                <div class="flex items-center gap-1 sm:gap-2 mb-1.5">
+                    <span class="text-xs sm:text-sm">{{ $icon }}</span>
+                    <span class="text-xs font-semibold text-gray-700 truncate">{{ $diff }}</span>
+                    <span class="ml-auto text-xs {{ $unlocked ? 'text-emerald-500' : 'text-gray-400' }} flex-shrink-0">
                         {{ $unlocked ? '✓' : '🔒' }}
                     </span>
                 </div>
-                <div class="w-full bg-gray-200 rounded-full h-1.5 mb-1">
-                    <div class="bg-indigo-400 h-1.5 rounded-full" style="width: {{ min(100, $min > 0 ? round(($completedCount/$min)*100) : 100) }}%"></div>
+                <div class="w-full bg-gray-200 rounded-full h-1 sm:h-1.5 mb-1">
+                    <div class="bg-indigo-400 h-1 sm:h-1.5 rounded-full" style="width: {{ min(100, $min > 0 ? round(($completedCount/$min)*100) : 100) }}%"></div>
                 </div>
-                <p class="text-xs text-gray-400">Min. {{ $min }} materi</p>
+                <p class="text-xs text-gray-400 leading-tight">Min. {{ $min }} materi</p>
             </div>
         @endforeach
     </div>
@@ -46,7 +46,7 @@
     <div class="flex items-center justify-between mb-3">
         <h2 class="font-semibold text-gray-800 text-sm">⚙ Pengaturan Level</h2>
     </div>
-    <form action="{{ route('pbl.level-settings') }}" method="POST" class="grid grid-cols-3 gap-4">
+    <form action="{{ route('pbl.level-settings') }}" method="POST" class="grid grid-cols-1 sm:grid-cols-3 gap-3">
         @csrf
         @foreach(['mudah' => 'Mudah', 'sedang' => 'Sedang', 'sulit' => 'Sulit'] as $key => $label)
         <div>
@@ -55,7 +55,7 @@
                 class="w-full border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
         </div>
         @endforeach
-        <div class="col-span-3 flex justify-end">
+        <div class="sm:col-span-3 flex justify-end">
             <button class="btn-primary text-xs">Simpan Pengaturan</button>
         </div>
     </form>

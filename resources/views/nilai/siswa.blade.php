@@ -122,7 +122,22 @@
     </div>
     @endif
 
-    @if($questions->count() > 0)
+    @if(!$isTestOpen)
+    {{-- Test sudah dikerjakan / dikunci --}}
+    <div class="card p-8 text-center">
+        <div class="h-14 w-14 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
+            <span class="text-2xl">🔒</span>
+        </div>
+        <p class="font-semibold text-gray-700 mb-1">Test sudah dikerjakan</p>
+        <p class="text-sm text-gray-400">Akses test kamu sudah dikunci. Hubungi guru jika ingin mengerjakan ulang.</p>
+        @if($lastTestResult)
+        <div class="mt-4 inline-flex items-center gap-2 bg-indigo-50 text-indigo-700 text-sm font-medium px-4 py-2 rounded-lg">
+            Skor terakhirmu: <span class="font-bold text-lg">{{ $lastTestResult->persentase }}</span>/100
+        </div>
+        @endif
+    </div>
+
+    @elseif($questions->count() > 0)
     <div class="card p-5">
         <form action="{{ route('nilai.test.submit') }}" method="POST">
             @csrf

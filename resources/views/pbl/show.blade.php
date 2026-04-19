@@ -6,9 +6,9 @@
     ← Kembali ke daftar aktivitas
 </a>
 
-<div class="grid lg:grid-cols-3 gap-6">
+<div class="grid lg:grid-cols-3 gap-4 lg:gap-6">
     {{-- Main --}}
-    <div class="lg:col-span-2 space-y-5">
+    <div class="lg:col-span-2 space-y-4">
         {{-- Soal --}}
         <div class="card p-6">
             <div class="flex items-center gap-3 mb-4">
@@ -206,11 +206,29 @@
     </div>
 
     {{-- Sidebar --}}
-    <div class="space-y-4">
-        <div class="card p-5">
-            <h3 class="font-semibold text-gray-800 mb-3 text-sm">📚 Materi Terkait</h3>
+    {{-- Sidebar --}}
+    <div class="lg:col-span-1 order-first lg:order-last">
+
+        {{-- Info Aktivitas: tampil horizontal di mobile --}}
+        <div class="card p-4 mb-3">
+            <div class="flex flex-wrap items-center gap-x-4 gap-y-2 lg:block">
+                <h3 class="font-semibold text-gray-800 text-sm w-full lg:mb-2">Info Aktivitas</h3>
+                <div class="flex items-center gap-2 text-xs">
+                    <span class="text-gray-500">Tingkat:</span>
+                    <span class="badge-{{ strtolower($pblActivity->difficulty) }}">{{ $pblActivity->difficulty }}</span>
+                </div>
+                <div class="flex items-center gap-2 text-xs">
+                    <span class="text-gray-500">Topik:</span>
+                    <span class="font-medium text-gray-700">{{ $pblActivity->topic }}</span>
+                </div>
+            </div>
+        </div>
+
+        {{-- Materi Terkait --}}
+        <div class="card p-4 mb-3">
+            <h3 class="font-semibold text-gray-800 mb-2 text-sm">📚 Materi Terkait</h3>
             @if($pblActivity->relatedMateri)
-                <a href="{{ route('materi.show', $pblActivity->relatedMateri) }}" class="text-sm text-indigo-600 hover:underline font-medium">
+                <a href="{{ route('materi.show', $pblActivity->relatedMateri) }}" class="text-sm text-indigo-600 hover:underline font-medium block">
                     {{ $pblActivity->relatedMateri->title }}
                 </a>
                 <p class="text-xs text-gray-500 mt-1">{{ Str::limit($pblActivity->relatedMateri->description, 80) }}</p>
@@ -218,17 +236,13 @@
                 <p class="text-sm text-gray-400">Tidak ada materi terkait</p>
             @endif
         </div>
-        <div class="card p-5">
-            <h3 class="font-semibold text-gray-800 mb-3 text-sm">💻 Mini Compiler</h3>
+
+        {{-- Mini Compiler --}}
+        <div class="card p-4">
+            <h3 class="font-semibold text-gray-800 mb-2 text-sm">💻 Mini Compiler</h3>
             <a href="{{ route('compiler') }}" class="btn-outline w-full block text-center text-xs">Buka Compiler →</a>
         </div>
-        <div class="card p-5">
-            <h3 class="font-semibold text-gray-800 mb-2 text-sm">Info Aktivitas</h3>
-            <dl class="space-y-1.5 text-xs">
-                <div class="flex justify-between"><dt class="text-gray-500">Tingkat</dt><dd class="font-medium">{{ $pblActivity->difficulty }}</dd></div>
-                <div class="flex justify-between"><dt class="text-gray-500">Topik</dt><dd class="font-medium">{{ $pblActivity->topic }}</dd></div>
-            </dl>
-        </div>
+
     </div>
 </div>
 @endsection
