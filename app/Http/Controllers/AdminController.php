@@ -107,4 +107,16 @@ class AdminController extends Controller
         return redirect()->route('admin.users')
             ->with('success', 'Password berhasil direset.');
     }
+
+    public function destroy(User $user)
+    {
+        // Cegah admin menghapus akunnya sendiri
+        if ($user->id === Auth::id()) {
+            return back()->with('error', 'Tidak dapat menghapus akun sendiri.');
+        }
+
+        $user->delete();
+
+        return redirect()->back()->with('success', 'User berhasil dihapus secara permanen!');
+    }
 }
