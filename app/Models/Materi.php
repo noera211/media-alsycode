@@ -9,7 +9,7 @@ class Materi extends Model
     protected $table = 'materi';
 
     protected $fillable = [
-        'title', 'description', 'type', 'duration',
+        'title', 'description', 'tujuan_pembelajaran', 'type', 'duration',
         'content', 'pdf_file', 'video_url', 'created_by',
     ];
 

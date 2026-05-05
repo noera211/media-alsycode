@@ -15,7 +15,8 @@ return new class extends Migration
             $table->string('option_b');
             $table->string('option_c');
             $table->string('option_d');
-            $table->char('correct_answer', 1); // A/B/C/D
+            $table->string('option_e')->nullable();
+            $table->char('correct_answer', 1); // A/B/C/D/E
             $table->foreignId('created_by')->constrained('users');
             $table->timestamps();
         });

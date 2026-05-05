@@ -38,6 +38,91 @@
         @endforeach
     </div>
 </div>
+
+{{-- PANDUAN PENGERJAAN --}}
+<div class="card p-5 mb-6">
+    <div class="flex items-center gap-2 mb-4">
+        <div class="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center flex-shrink-0">
+            <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+            </svg>
+        </div>
+        <div>
+            <h2 class="font-bold text-gray-900 text-sm">Panduan Pengerjaan Studi Kasus (PBL)</h2>
+            <p class="text-xs text-gray-400 mt-0.5">Ikuti langkah berikut untuk menyelesaikan setiap aktivitas</p>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+        <div class="flex gap-3 p-3 bg-indigo-50 border border-indigo-100 rounded-xl">
+            <div class="w-7 h-7 bg-indigo-600 rounded-full flex items-center justify-center flex-shrink-0 text-white text-xs font-bold">1</div>
+            <div>
+                <p class="text-xs font-bold text-indigo-800">Baca & Pahami Masalah</p>
+                <p class="text-xs text-indigo-600 mt-0.5 leading-relaxed">Pahami konteks, tujuan, dan batasan masalah.</p>
+            </div>
+        </div>
+        <div class="flex gap-3 p-3 bg-violet-50 border border-violet-100 rounded-xl">
+            <div class="w-7 h-7 bg-violet-600 rounded-full flex items-center justify-center flex-shrink-0 text-white text-xs font-bold">2</div>
+            <div>
+                <p class="text-xs font-bold text-violet-800">Identifikasi Solusi</p>
+                <p class="text-xs text-violet-600 mt-0.5 leading-relaxed">Tentukan masalah inti dan rencana pendekatan solusi.</p>
+            </div>
+        </div>
+        <div class="flex gap-3 p-3 bg-cyan-50 border border-cyan-100 rounded-xl">
+            <div class="w-7 h-7 bg-cyan-600 rounded-full flex items-center justify-center flex-shrink-0 text-white text-xs font-bold">3</div>
+            <div>
+                <p class="text-xs font-bold text-cyan-800">Susun Algoritma</p>
+                <p class="text-xs text-cyan-600 mt-0.5 leading-relaxed">Tuliskan langkah solusi dalam bentuk pseudocode.</p>
+            </div>
+        </div>
+        <div class="flex gap-3 p-3 bg-emerald-50 border border-emerald-100 rounded-xl">
+            <div class="w-7 h-7 bg-emerald-600 rounded-full flex items-center justify-center flex-shrink-0 text-white text-xs font-bold">4</div>
+            <div>
+                <p class="text-xs font-bold text-emerald-800">Implementasi Kode</p>
+                <p class="text-xs text-emerald-600 mt-0.5 leading-relaxed">Terjemahkan ke kode program. Gunakan Mini Compiler.</p>
+            </div>
+        </div>
+        <div class="flex gap-3 p-3 bg-amber-50 border border-amber-100 rounded-xl">
+            <div class="w-7 h-7 bg-amber-500 rounded-full flex items-center justify-center flex-shrink-0 text-white text-xs font-bold">5</div>
+            <div>
+                <p class="text-xs font-bold text-amber-800">Pengujian Solusi</p>
+                <p class="text-xs text-amber-600 mt-0.5 leading-relaxed">Uji program dengan berbagai input data.</p>
+            </div>
+        </div>
+        <div class="flex gap-3 p-3 bg-rose-50 border border-rose-100 rounded-xl">
+            <div class="w-7 h-7 bg-rose-500 rounded-full flex items-center justify-center flex-shrink-0 text-white text-xs font-bold">6</div>
+            <div>
+                <p class="text-xs font-bold text-rose-800">Kumpulkan Hasil</p>
+                <p class="text-xs text-rose-600 mt-0.5 leading-relaxed">Upload file jawaban (algoritma + kode + output).</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+{{-- TOMBOL FILE CONTOH PENGERJAAN --}}
+<div class="card p-5 mb-6 border-l-4 border-emerald-500 shadow-sm">
+    <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div class="flex items-center gap-4">
+            <div class="w-12 h-12 bg-emerald-100 rounded-2xl flex items-center justify-center flex-shrink-0">
+                <svg class="w-6 h-6 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                </svg>
+            </div>
+            <div>
+                <h2 class="font-bold text-gray-900 text-sm">Contoh Hasil Pengerjaan Siswa</h2>
+                <p class="text-xs text-gray-500 mt-0.5">Referensi format Algoritma, Pseudocode, dan Kode Program yang benar.</p>
+            </div>
+        </div>
+        <a href="{{ asset('files/contoh-pengerjaan-pbl.pdf') }}" target="_blank" 
+           class="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2.5 rounded-xl text-xs font-bold transition-all shadow-md shadow-emerald-100">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+            </svg>
+            Lihat Contoh (PDF)
+        </a>
+    </div>
+</div>
 @endif
 
 {{-- Level Settings (guru) --}}
@@ -62,7 +147,7 @@
 </div>
 @endif
 
-{{-- Aktivitas per level --}}
+{{-- Daftar Aktivitas PBL --}}
 @foreach(['Mudah', 'Sedang', 'Sulit'] as $level)
     @php
         $levelActivities = $activities->where('difficulty', $level);
@@ -159,42 +244,15 @@
 @push('scripts')
 <script>
 window.openEditPbl = function(id, title, topic, difficulty, problem, relatedMateri) {
-    console.log('Opening edit modal for:', id, title);
-    
     const form = document.getElementById('edit-pbl-form');
-    if (!form) {
-        alert('Form edit tidak ditemukan');
-        return;
-    }
-    
-    // Set form action
+    if (!form) return;
     form.action = '/aktivitas-pbl/' + id;
-    
-    // Fill form fields
-    const fields = {
-        'title': title,
-        'topic': topic,
-        'difficulty': difficulty,
-        'problem': problem,
-        'related_materi': relatedMateri
-    };
-    
+    const fields = { 'title': title, 'topic': topic, 'difficulty': difficulty, 'problem': problem, 'related_materi': relatedMateri };
     Object.keys(fields).forEach(name => {
         const field = form.querySelector('[name="' + name + '"]');
-        if (field) {
-            field.value = fields[name];
-            console.log('Set', name, '=', fields[name]);
-        }
+        if (field) field.value = fields[name];
     });
-    
-    // Show modal
-    const modal = document.getElementById('modal-edit');
-    if (modal) {
-        modal.classList.remove('hidden');
-        console.log('Modal opened');
-    } else {
-        alert('Modal tidak ditemukan');
-    }
+    document.getElementById('modal-edit').classList.remove('hidden');
 };
 </script>
 @endpush

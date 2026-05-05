@@ -37,7 +37,18 @@ class User extends Authenticatable
         return $this->materiProgress()->where('status', 'selesai')->count();
     }
 
-    public function isAdmin(): bool   { return $this->role === 'admin'; }
-    public function isGuru(): bool    { return $this->role === 'guru'; }
-    public function isSiswa(): bool   { return $this->role === 'siswa'; }
+    public function isAdmin(): bool
+    {
+        return $this->role === 'admin';
+    }
+
+    public function isGuru(): bool
+    {
+        return $this->role === 'guru';
+    }
+
+    public function isSiswa(): bool
+    {
+        return $this->role === 'siswa';
+    }
 }

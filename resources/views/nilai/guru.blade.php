@@ -1,6 +1,11 @@
 @extends('layouts.app')
 @section('title', 'Nilai & Evaluasi')
 
+@push('styles')
+    <!-- Pastikan Lucide CSS dipanggil agar icon muncul -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lucide-static@0.441.0/font/lucide.min.css">
+@endpush
+
 @section('content')
     <div class="mb-6 flex items-center justify-between">
         <div>
@@ -13,27 +18,38 @@
         <div class="flex gap-1 bg-gray-100 p-1 rounded-xl mb-6 w-fit">
             <button @click="tab='nilai'"
                 :class="tab === 'nilai' ? 'bg-white shadow text-gray-900' : 'text-gray-500 hover:text-gray-700'"
-                class="px-4 py-2 rounded-lg text-sm font-medium transition-all">🏆 Nilai Siswa</button>
+                class="px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-1.5">
+                <i class="icon-trophy" style="font-size: 16px;"></i> Nilai Siswa
+            </button>
+            <a href="{{ route('kumpulan-soal.index') }}"
+                class="px-4 py-2 rounded-lg text-sm font-medium transition-all text-gray-500 hover:text-gray-700 hover:bg-white flex items-center gap-1.5">
+                <i class="icon-book-copy" style="font-size: 16px;"></i> Kumpulan Soal
+            </a>
             <a href="{{ route('bank-soal.index') }}"
-                class="px-4 py-2 rounded-lg text-sm font-medium transition-all text-gray-500 hover:text-gray-700 hover:bg-white">
-                📋 Bank Soal Test
+                class="px-4 py-2 rounded-lg text-sm font-medium transition-all text-gray-500 hover:text-gray-700 hover:bg-white flex items-center gap-1.5">
+                <i class="icon-clipboard-list" style="font-size: 16px;"></i> Bank Soal Test
             </a>
         </div>
 
         {{-- Tab Nilai --}}
         <div x-show="tab==='nilai'">
             <div class="card p-4 mb-4 bg-indigo-50 border-indigo-100">
-                <p class="text-xs text-indigo-700">
-                    <span class="font-semibold">Nilai PBL</span> diinput manual oleh guru berdasarkan nilai terbaik / level tertinggi siswa.
-                    <span class="font-semibold ml-2">Nilai Evaluasi</span> otomatis dari hasil test mandiri siswa.
-                    <span class="font-semibold ml-2">Nilai Akhir</span> = rata-rata keduanya.
+                <p class="text-xs text-indigo-700 flex items-center gap-1">
+                    <i class="icon-info" style="font-size: 14px;"></i>
+                    <span>
+                        <span class="font-semibold">Nilai PBL</span> diinput manual oleh guru berdasarkan nilai terbaik / level tertinggi siswa.
+                        <span class="font-semibold ml-2">Nilai Evaluasi</span> otomatis dari hasil test mandiri siswa.
+                        <span class="font-semibold ml-2">Nilai Akhir</span> = rata-rata keduanya.
+                    </span>
                 </p>
             </div>
 
             <div class="card overflow-hidden">
                 <div class="p-5 border-b border-gray-100 flex items-center justify-between">
                     <h2 class="font-semibold text-gray-800">Daftar Nilai Siswa</h2>
-                    <span class="text-xs text-gray-400">{{ $siswaList->count() }} siswa</span>
+                    <span class="text-xs text-gray-400 flex items-center gap-1.5">
+                        <i class="icon-users" style="font-size: 14px;"></i> {{ $siswaList->count() }} siswa
+                    </span>
                 </div>
                 <div class="overflow-x-auto">
                     <table class="w-full text-sm">
@@ -69,7 +85,7 @@
                                             ? round(($nilaiPbl + $nilaiEvaluasi) / 2)
                                             : null;
                                     $subsSiswa = $submissionMap[$siswa->id] ?? collect();
-                                    $isTestOpen = $grade === null || $grade->is_test_open;
+                                    $isTestOpen = $grade ? $grade->is_test_open : true;
                                     $sudahTest = $testResult !== null;
                                 @endphp
                                 <tr class="hover:bg-gray-50">
@@ -95,7 +111,7 @@
                                                 {{ $nilaiPbl }}
                                             </span>
                                             @if ($grade->catatan_pbl)
-                                                <p class="text-xs text-gray-400 mt-1 max-w-[100px] mx-auto truncate">
+                                                <p class="text-xs text-gray-400 mt-1 max-w-[100px] mx-auto truncate" title="{{ $grade->catatan_pbl }}">
                                                     {{ $grade->catatan_pbl }}</p>
                                             @endif
                                         @else
@@ -133,17 +149,18 @@
                                     {{-- Status Test --}}
                                     <td class="px-5 py-4 text-center">
                                         @if ($sudahTest)
-                                            <span class="inline-flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-full bg-emerald-100 text-emerald-700">
-                                                ✓ Sudah test
-                                            </span>
-                                        @elseif(!$isTestOpen)
-                                            <span class="inline-flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-full bg-gray-100 text-gray-500">
-                                                🔒 Dikunci
-                                            </span>
+                                            @if (!$isTestOpen)
+                                                <span class="inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full bg-gray-100 text-gray-600 border border-gray-200">
+                                                    <i class="icon-lock" style="font-size: 14px;"></i> Sudah test
+                                                </span>
+                                            @else
+                                                <span class="inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full bg-blue-100 text-blue-700 border border-blue-200">
+                                                    <i class="icon-unlock" style="font-size: 14px;"></i> Terbuka
+                                                </span>
+                                            @endif
                                         @else
-                                            <span class="inline-flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-full bg-blue-100 text-blue-700">
-                                                Terbuka
-                                            </span>
+                                            {{-- Dikosongkan jika belum mengerjakan test --}}
+                                            <span class="text-gray-300 text-xs">—</span>
                                         @endif
                                     </td>
 
@@ -151,26 +168,29 @@
                                     <td class="px-5 py-4 text-center">
                                         <div class="flex items-center justify-center gap-2">
                                             <button onclick="openPblModal({{ $siswa->id }}, '{{ addslashes($siswa->name) }}', {{ $nilaiPbl ?? 'null' }}, '{{ addslashes($grade?->catatan_pbl ?? '') }}')"
-                                                class="text-xs btn-outline px-3 py-1.5">
-                                                {{ $nilaiPbl !== null ? '✏ Edit PBL' : '+ Beri Nilai PBL' }}
+                                                class="flex items-center gap-1.5 text-xs btn-outline px-3 py-1.5">
+                                                @if ($nilaiPbl !== null)
+                                                    <i class="icon-pencil" style="font-size: 14px;"></i> Edit PBL
+                                                @else
+                                                    <i class="icon-plus-circle" style="font-size: 14px;"></i> Beri Nilai PBL
+                                                @endif
                                             </button>
                                             
-                                            <form action="{{ route('nilai.toggle.test', $siswa) }}" method="POST">
-                                                @csrf
-                                                @if ($sudahTest)
-                                                    <button type="submit" class="text-xs btn-outline px-3 py-1.5 border-blue-300 text-blue-600 hover:bg-blue-50">
-                                                        🔓 Buka Ulang
-                                                    </button>
-                                                @elseif(!$isTestOpen)
-                                                    <button type="submit" class="text-xs btn-outline px-3 py-1.5 border-blue-300 text-blue-600 hover:bg-blue-50">
-                                                        🔓 Buka Test
-                                                    </button>
-                                                @else
-                                                    <button type="submit" class="text-xs btn-outline px-3 py-1.5 border-red-300 text-red-500 hover:bg-red-50">
-                                                        🔒 Kunci
-                                                    </button>
-                                                @endif
-                                            </form>
+                                            {{-- Tombol Buka/Kunci hanya muncul jika siswa SUDAH test --}}
+                                            @if ($sudahTest)
+                                                <form action="{{ route('nilai.toggle.test', $siswa) }}" method="POST">
+                                                    @csrf
+                                                    @if (!$isTestOpen)
+                                                        <button type="submit" class="flex items-center gap-1.5 text-xs btn-outline px-3 py-1.5 border-blue-300 text-blue-600 hover:bg-blue-50">
+                                                            <i class="icon-unlock" style="font-size: 14px;"></i> Buka Ulang
+                                                        </button>
+                                                    @else
+                                                        <button type="submit" class="flex items-center gap-1.5 text-xs btn-outline px-3 py-1.5 border-red-300 text-red-500 hover:bg-red-50">
+                                                            <i class="icon-lock" style="font-size: 14px;"></i> Kunci
+                                                        </button>
+                                                    @endif
+                                                </form>
+                                            @endif
                                         </div>
                                     </td>
                                 </tr>
@@ -178,7 +198,10 @@
 
                             @if ($siswaList->isEmpty())
                                 <tr>
-                                    <td colspan="7" class="px-5 py-10 text-center text-gray-400 text-sm">Belum ada siswa terdaftar.</td>
+                                    <td colspan="7" class="px-5 py-10 text-center text-gray-400 text-sm flex flex-col items-center justify-center gap-2">
+                                        <i class="icon-users" style="font-size: 24px;"></i>
+                                        Belum ada siswa terdaftar.
+                                    </td>
                                 </tr>
                             @endif
                         </tbody>
@@ -186,7 +209,6 @@
                 </div>
             </div>
         </div>
-        {{-- TAB BANK SOAL TELAH DIHAPUS --}}
     </div>
 
     {{-- Modal Input Nilai PBL --}}
@@ -195,12 +217,12 @@
         <div class="bg-white rounded-2xl shadow-xl w-full max-w-sm mx-4">
             <div class="p-6">
                 <div class="flex items-center justify-between mb-1">
-                    <h2 class="text-lg font-bold">Nilai PBL</h2>
+                    <h2 class="text-lg font-bold flex items-center gap-2">
+                        <i class="icon-clipboard-edit" style="font-size: 20px;"></i> Nilai PBL
+                    </h2>
                     <button type="button" onclick="document.getElementById('modal-pbl').classList.add('hidden')"
                         class="text-gray-400 hover:text-gray-600">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                        </svg>
+                        <i class="icon-x" style="font-size: 20px;"></i>
                     </button>
                 </div>
                 <p id="modal-pbl-name" class="text-sm text-gray-500 mb-4"></p>
@@ -221,7 +243,9 @@
                     </div>
                     <div class="flex gap-3 justify-end pt-1">
                         <button type="button" onclick="document.getElementById('modal-pbl').classList.add('hidden')" class="btn-outline">Batal</button>
-                        <button type="submit" class="btn-primary">Simpan</button>
+                        <button type="submit" class="btn-primary flex items-center gap-1.5">
+                            <i class="icon-save" style="font-size: 16px;"></i> Simpan
+                        </button>
                     </div>
                 </form>
             </div>

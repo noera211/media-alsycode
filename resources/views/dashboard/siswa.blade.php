@@ -28,6 +28,8 @@
         border-radius: 1rem; padding: 1.25rem 1.5rem;
         position: relative; overflow: hidden; color: white;
         transition: transform 0.2s, box-shadow 0.2s;
+        min-height: 120px;
+        text-align: center;
     }
     .stat-card-siswa:hover { transform: translateY(-3px); box-shadow: 0 12px 28px rgba(0,0,0,0.1); }
     .stat-card-siswa::after {
@@ -102,18 +104,18 @@
     </div>
 
     {{-- Stats --}}
-    <div class="grid grid-cols-3 gap-4">
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div class="stat-card-siswa stat-indigo">
             <p class="text-indigo-200 text-xs font-semibold uppercase tracking-wide mb-2">Materi Selesai</p>
             <p class="text-3xl font-extrabold">{{ $completedCount }}</p>
-            <div class="mt-2 text-indigo-200 text-xs flex items-center gap-1.5">
+            <div class="mt-2 text-indigo-200 text-xs flex items-center justify-center gap-1.5">
                 <i class="icon-book-open" style="width:12px;height:12px;flex-shrink:0;"></i> dari {{ $totalMateri }} total
             </div>
         </div>
         <div class="stat-card-siswa stat-emerald">
             <p class="text-emerald-100 text-xs font-semibold uppercase tracking-wide mb-2">Aktivitas Dikerjakan</p>
             <p class="text-3xl font-extrabold">{{ $submissionCount }}</p>
-            <div class="mt-2 text-emerald-100 text-xs flex items-center gap-1.5">
+            <div class="mt-2 text-emerald-100 text-xs flex items-center justify-center gap-1.5">
                 <i class="icon-layers" style="width:12px;height:12px;flex-shrink:0;"></i> submission
             </div>
         </div>
@@ -123,12 +125,37 @@
                 {{ $lastResult ? $lastResult->persentase : '—' }}
                 @if($lastResult)<span class="text-lg font-normal opacity-70">/100</span>@endif
             </p>
-            <div class="mt-2 text-amber-100 text-xs flex items-center gap-1.5">
+            <div class="mt-2 text-amber-100 text-xs flex items-center justify-center gap-1.5">
                 <i class="icon-trophy" style="width:12px;height:12px;flex-shrink:0;"></i>
                 {{ $lastResult ? $lastResult->taken_at->diffForHumans() : 'Belum test' }}
             </div>
         </div>
     </div>
+
+    {{-- Deskripsi & Tujuan Pembelajaran Mata Pelajaran --}}
+    @if(optional($subjectInfo)->deskripsi || optional($subjectInfo)->tujuan_pembelajaran)
+    <div class="bg-indigo-50 border border-indigo-100 rounded-2xl p-5">
+        <div class="flex items-center gap-2 mb-3">
+            <span class="text-lg">🎯</span>
+            <div>
+                <h3 class="font-bold text-indigo-800 text-sm">{{ optional($subjectInfo)->mata_pelajaran }} · Kelas {{ optional($subjectInfo)->kelas }}</h3>
+                @if(optional($subjectInfo)->deskripsi)
+                <p class="text-xs text-indigo-600 mt-0.5">{{ optional($subjectInfo)->deskripsi }}</p>
+                @endif
+            </div>
+        </div>
+        @if(optional($subjectInfo)->tujuan_pembelajaran)
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            @foreach(optional($subjectInfo)->tujuan_array ?? [] as $t)
+            <div class="flex items-start gap-2 text-sm text-indigo-700">
+                <span class="mt-0.5 flex-shrink-0 w-4 h-4 rounded-full bg-indigo-200 flex items-center justify-center text-xs font-bold text-indigo-600">✓</span>
+                {{ $t }}
+            </div>
+            @endforeach
+        </div>
+        @endif
+    </div>
+    @endif
 
     {{-- Level Access --}}
     <div class="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm">
@@ -209,6 +236,14 @@
             <div class="flex-1">
                 <p class="font-bold text-gray-800 text-sm">Mini Compiler</p>
                 <p class="text-xs text-gray-400 mt-0.5">Coba kode langsung di browser</p>
+            </div>
+            <i class="icon-chevron-right text-gray-300"></i>
+        </a>
+        <a href="{{ asset('files/guidebook.pdf') }}" target="_blank" class="quick-link">
+            <div class="quick-link-icon bg-rose-100 text-rose-600"><i class="icon-file-text"></i></div>
+            <div class="flex-1">
+                <p class="font-bold text-gray-800 text-sm">Guide Book</p>
+                <p class="text-xs text-gray-400 mt-0.5">Panduan belajar & referensi materi</p>
             </div>
             <i class="icon-chevron-right text-gray-300"></i>
         </a>

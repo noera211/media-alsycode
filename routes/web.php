@@ -52,12 +52,10 @@ Route::middleware(['auth', 'role:guru,siswa'])->group(function () {
         Route::get('/', [NilaiController::class, 'index'])->name('index');
         Route::post('/pbl/{siswa}', [NilaiController::class, 'updateNilaiPbl'])->name('pbl.update');
         Route::post('/toggle-test/{siswa}', [NilaiController::class, 'toggleTest'])->name('toggle.test');
+        Route::post('/evaluation-set', [NilaiController::class, 'updateEvaluationSet'])->name('evaluation-set.update');
         Route::post('/test', [NilaiController::class, 'submitTest'])->name('test.submit');
     });
 
-    /*
-    | Bank Soal — route terpisah
-    */
     Route::prefix('bank-soal')->name('bank-soal.')->group(function () {
         Route::get('/', [BankSoalController::class, 'index'])->name('index');
         Route::post('/', [BankSoalController::class, 'store'])->name('store');
@@ -66,6 +64,27 @@ Route::middleware(['auth', 'role:guru,siswa'])->group(function () {
     });
 
     Route::get('/compiler', fn () => view('compiler.index'))->name('compiler');
+
+    Route::get('/subject-info/edit', [\App\Http\Controllers\SubjectInfoController::class, 'edit'])->name('subject-info.edit');
+    Route::put('/subject-info', [\App\Http\Controllers\SubjectInfoController::class, 'update'])->name('subject-info.update');
+
+    Route::prefix('kumpulan-soal')->name('kumpulan-soal.')->group(function () {
+        // Guru
+        Route::get('/guru', [\App\Http\Controllers\QuestionSetController::class, 'index'])->name('index');
+        Route::get('/guru/buat', [\App\Http\Controllers\QuestionSetController::class, 'create'])->name('create');
+        Route::post('/guru', [\App\Http\Controllers\QuestionSetController::class, 'store'])->name('store');
+        Route::get('/guru/{kumpulanSoal}/edit', [\App\Http\Controllers\QuestionSetController::class, 'edit'])->name('edit');
+        Route::put('/guru/{kumpulanSoal}', [\App\Http\Controllers\QuestionSetController::class, 'update'])->name('update');
+        Route::delete('/guru/{kumpulanSoal}', [\App\Http\Controllers\QuestionSetController::class, 'destroy'])->name('destroy');
+        Route::get('/guru/{kumpulanSoal}', [\App\Http\Controllers\QuestionSetController::class, 'show'])->name('show');
+        Route::post('/guru/{siswa}/{set}/unlock', [\App\Http\Controllers\QuestionSetController::class, 'unlockSetAttempt'])->name('unlock-attempt');
+
+        // Siswa
+        Route::get('/', [\App\Http\Controllers\QuestionSetController::class, 'riwayatSiswa'])->name('siswa');
+        Route::get('/hasil/{result}', [\App\Http\Controllers\QuestionSetController::class, 'result'])->name('result');
+        Route::get('/{kumpulanSoal}/kerjakan', [\App\Http\Controllers\QuestionSetController::class, 'take'])->name('take');
+        Route::post('/{kumpulanSoal}/submit', [\App\Http\Controllers\QuestionSetController::class, 'submit'])->name('submit');
+    });
 });
 
 Route::middleware(['auth', 'role:admin'])

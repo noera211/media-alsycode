@@ -107,63 +107,50 @@
 <div>
     <h2 class="font-semibold text-gray-800 text-sm mb-3">📝 Test Evaluasi Mandiri</h2>
 
-    @if($lastTestResult)
-    <div class="card p-4 mb-4 flex items-center gap-4 bg-gray-50">
-        <div class="h-12 w-12 bg-indigo-100 rounded-xl flex items-center justify-center flex-shrink-0">
-            <span class="text-lg font-bold text-indigo-600">{{ $lastTestResult->persentase }}</span>
-        </div>
-        <div>
-            <p class="font-semibold text-gray-800 text-sm">Hasil Test Terakhir</p>
-            <p class="text-xs text-gray-400">
-                {{ $lastTestResult->score }}/{{ $lastTestResult->total_questions }} benar ·
-                {{ \Carbon\Carbon::parse($lastTestResult->taken_at)->diffForHumans() }}
-            </p>
-        </div>
-    </div>
-    @endif
-
-    @if(!$isTestOpen)
-    {{-- Test sudah dikerjakan / dikunci --}}
-    <div class="card p-8 text-center">
-        <div class="h-14 w-14 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
-            <span class="text-2xl">🔒</span>
-        </div>
-        <p class="font-semibold text-gray-700 mb-1">Test sudah dikerjakan</p>
-        <p class="text-sm text-gray-400">Akses test kamu sudah dikunci. Hubungi guru jika ingin mengerjakan ulang.</p>
-        @if($lastTestResult)
-        <div class="mt-4 inline-flex items-center gap-2 bg-indigo-50 text-indigo-700 text-sm font-medium px-4 py-2 rounded-lg">
-            Skor terakhirmu: <span class="font-bold text-lg">{{ $lastTestResult->persentase }}</span>/100
-        </div>
-        @endif
-    </div>
-
-    @elseif($questions->count() > 0)
-    <div class="card p-5">
-        <form action="{{ route('nilai.test.submit') }}" method="POST">
-            @csrf
-            @foreach($questions as $i => $q)
-            <div class="mb-5 {{ !$loop->last ? 'border-b pb-4' : '' }}">
-                <p class="text-sm font-medium mb-2">
-                    <span class="text-indigo-600 font-bold">{{ $i+1 }}.</span>
-                    {{ $q->question }}
-                </p>
-                <div class="space-y-2">
-                    @foreach($q->options as $key => $val)
-                    <label class="flex items-center gap-2 border rounded-lg px-3 py-2 cursor-pointer hover:border-indigo-400 transition-colors">
-                        <input type="radio" name="answers[{{ $q->id }}]" value="{{ $key }}" class="text-indigo-600">
-                        <span class="font-medium text-sm">{{ $key }}.</span>
-                        <span class="text-sm">{{ $val }}</span>
-                    </label>
-                    @endforeach
-                </div>
+    @if($evaluationSet)
+    <div class="card p-5 mb-4 bg-white border">
+        <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+                <p class="text-xs uppercase tracking-wide text-gray-400 mb-2">Set Evaluasi Aktif</p>
+                <p class="text-sm font-semibold text-gray-900">{{ $evaluationSet->name }}</p>
+                <p class="text-xs text-gray-500 mt-1">{{ $evaluationSet->questions_count }} soal</p>
             </div>
-            @endforeach
-            <button type="submit" class="btn-primary w-full mt-4">Kumpulkan Jawaban</button>
-        </form>
+            @if(!$isTestOpen)
+            <div class="inline-flex items-center gap-2 rounded-xl bg-gray-100 px-4 py-3 text-sm text-gray-600">
+                <span>🔒 Test dikunci</span>
+            </div>
+            @else
+            <a href="{{ route('kumpulan-soal.take', $evaluationSet) }}" class="btn-primary w-full sm:w-auto text-center">
+                Kerjakan Test Evaluasi
+            </a>
+            @endif
+        </div>
+    </div>
+
+    @if($evaluationSet->questions_count === 0)
+    <div class="card p-10 text-center text-gray-400 text-sm">
+        Set evaluasi terpilih belum berisi soal. Hubungi guru untuk memilih set lain atau menambahkan soal.
     </div>
     @else
+        @if($lastTestResult)
+        <div class="card p-4 mb-4 flex items-center gap-4 bg-gray-50">
+            <div class="h-12 w-12 bg-indigo-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                <span class="text-lg font-bold text-indigo-600">{{ $lastTestResult->persentase }}</span>
+            </div>
+            <div>
+                <p class="font-semibold text-gray-800 text-sm">Hasil Test Terakhir</p>
+                <p class="text-xs text-gray-400">
+                    {{ $lastTestResult->score }}/{{ $lastTestResult->total_questions }} benar ·
+                    {{ \Carbon\Carbon::parse($lastTestResult->taken_at)->diffForHumans() }}
+                </p>
+            </div>
+        </div>
+        @endif
+    @endif
+
+    @else
     <div class="card p-10 text-center text-gray-400 text-sm">
-        Belum ada soal test dari guru.
+        Belum ada set evaluasi yang dipilih guru.
     </div>
     @endif
 </div>

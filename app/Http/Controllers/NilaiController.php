@@ -3,7 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\PblSubmission;
+use App\Models\QuestionSet;
+use App\Models\QuestionSetResult;
 use App\Models\StudentGrade;
+use App\Models\SubjectInfo;
 use App\Models\TestQuestion;
 use App\Models\TestResult;
 use App\Models\User;
@@ -18,6 +21,13 @@ class NilaiController extends Controller
     {
         /** @var User $user */
         $user = Auth::user();
+
+        $subjectInfo = SubjectInfo::first();
+        $evaluationSet = null;
+        if ($subjectInfo && $subjectInfo->current_evaluation_set_id) {
+            $evaluationSet = QuestionSet::withCount('questions')->find($subjectInfo->current_evaluation_set_id);
+        }
+        $sets = QuestionSet::withCount('questions')->orderByDesc('created_at')->get();
 
         if ($user && $user->isGuru()) {
             $siswaList = User::where('role', 'siswa')
@@ -35,16 +45,23 @@ class NilaiController extends Controller
                 ->get()
                 ->groupBy('student_id');
 
-            $testMap = TestResult::whereIn('student_id', $siswaIds)
-                ->orderByDesc('taken_at')
-                ->get()
-                ->groupBy('student_id')
-                ->map(fn($results) => $results->first());
-
-            $questions = TestQuestion::all();
+            if ($evaluationSet) {
+                $testMap = QuestionSetResult::where('question_set_id', $evaluationSet->id)
+                    ->whereIn('student_id', $siswaIds)
+                    ->latest('taken_at')
+                    ->get()
+                    ->groupBy('student_id')
+                    ->map(fn($results) => $results->first());
+            } else {
+                $testMap = TestResult::whereIn('student_id', $siswaIds)
+                    ->orderByDesc('taken_at')
+                    ->get()
+                    ->groupBy('student_id')
+                    ->map(fn($results) => $results->first());
+            }
 
             return view('nilai.guru', compact(
-                'siswaList', 'gradeMap', 'submissionMap', 'testMap', 'questions'
+                'siswaList', 'gradeMap', 'submissionMap', 'testMap', 'subjectInfo', 'evaluationSet', 'sets'
             ));
         }
 
@@ -64,20 +81,25 @@ class NilaiController extends Controller
         // - is_test_open = false → sudah dikunci
         $isTestOpen = $grade === null || $grade->is_test_open;
 
-        $lastTestResult = TestResult::where('student_id', $user->id)
-            ->latest('taken_at')->first();
-        $nilaiEvaluasi = $lastTestResult ? $lastTestResult->persentase : null;
+        $lastTestResult = null;
+        $nilaiEvaluasi = null;
+        if ($evaluationSet) {
+            $lastTestResult = QuestionSetResult::where('question_set_id', $evaluationSet->id)
+                ->where('student_id', $user->id)
+                ->latest('taken_at')->first();
+            $nilaiEvaluasi = $lastTestResult ? $lastTestResult->persentase : null;
+        }
 
         $nilaiAkhir = null;
         if ($nilaiPbl !== null && $nilaiEvaluasi !== null) {
             $nilaiAkhir = round(($nilaiPbl + $nilaiEvaluasi) / 2);
         }
 
-        $questions = TestQuestion::all();
+        $questions = $evaluationSet ? $evaluationSet->questions : collect();
 
         return view('nilai.siswa', compact(
             'submissions', 'lastTestResult', 'questions',
-            'nilaiPbl', 'catatanPbl', 'nilaiEvaluasi', 'nilaiAkhir', 'isTestOpen'
+            'nilaiPbl', 'catatanPbl', 'nilaiEvaluasi', 'nilaiAkhir', 'isTestOpen', 'evaluationSet'
         ));
     }
 
@@ -218,6 +240,29 @@ class NilaiController extends Controller
 
         return redirect()->route('nilai.index')
             ->with('success', "Test selesai! Skor Anda: {$result->persentase}/100");
+    }
+
+    public function updateEvaluationSet(Request $request)
+    {
+        $this->authorizeGuru();
+
+        $request->validate([
+            'evaluation_set_id' => 'nullable|exists:question_sets,id',
+        ]);
+
+        $subjectInfo = SubjectInfo::firstOrCreate([]);
+        $subjectInfo->current_evaluation_set_id = $request->evaluation_set_id;
+
+        if ($request->evaluation_set_id) {
+            $set = QuestionSet::withCount('questions')->find($request->evaluation_set_id);
+            if (!$set || $set->questions_count === 0) {
+                return back()->with('error', 'Pilih kumpulan soal yang sudah memiliki soal.');
+            }
+        }
+
+        $subjectInfo->save();
+
+        return back()->with('success', 'Set evaluasi berhasil diperbarui.');
     }
 
     private function authorizeGuru(): void

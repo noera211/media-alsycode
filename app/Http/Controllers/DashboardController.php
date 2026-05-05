@@ -9,6 +9,8 @@ use App\Models\PblSubmission;
 use App\Models\LevelSetting;
 use App\Models\TestResult;
 use App\Models\User;
+use App\Models\SubjectInfo;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 
 class DashboardController extends Controller
@@ -19,6 +21,7 @@ class DashboardController extends Controller
         $user           = Auth::user();
         $totalMateri    = Materi::count();
         $levelSettings  = LevelSetting::pluck('min_materi', 'difficulty');
+        $subjectInfo    = SubjectInfo::first();
 
         if ($user && $user->isSiswa()) {
             $completedCount = $user->completedMateriCount();
@@ -35,11 +38,10 @@ class DashboardController extends Controller
 
             return view('dashboard.siswa', compact(
                 'completedCount', 'totalMateri', 'progressPct',
-                'accessible', 'levelSettings', 'lastResult', 'submissionCount'
+                'accessible', 'levelSettings', 'lastResult', 'submissionCount', 'subjectInfo'
             ));
         }
 
-        // Guru / Admin melihat statistik kelas
         $totalSiswa      = User::where('role', 'siswa')->where('is_active', true)->count();
         $totalPbl        = PblActivity::count();
         $pendingGrading  = PblSubmission::whereNull('nilai')->count();
@@ -48,11 +50,11 @@ class DashboardController extends Controller
 
         return view('dashboard.guru', compact(
             'totalSiswa', 'totalMateri', 'totalPbl',
-            'pendingGrading', 'recentSubmissions'
+            'pendingGrading', 'recentSubmissions', 'subjectInfo'
         ));
     }
 
-    private function getAccessible(int $count, $settings): array
+    private function getAccessible(int $count, Collection $settings): array
     {
         $accessible = [];
         foreach ($settings as $diff => $min) {

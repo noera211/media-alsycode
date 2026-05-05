@@ -25,12 +25,12 @@ class BankSoalController extends Controller
             'option_b'       => 'required|string|max:255',
             'option_c'       => 'required|string|max:255',
             'option_d'       => 'required|string|max:255',
-            'correct_answer' => 'required|in:A,B,C,D',
+            'correct_answer' => 'required|in:A,B,C,D,E',
+            'option_e'       => 'nullable|string|max:255',
         ]);
 
-        // Perbaikan: Bungkus argumen $request->only ke dalam array []
         TestQuestion::create(array_merge(
-            $request->only(['question', 'option_a', 'option_b', 'option_c', 'option_d', 'correct_answer']),
+            $request->only(['question', 'option_a', 'option_b', 'option_c', 'option_d', 'option_e', 'correct_answer']),
             ['created_by' => Auth::id()]
         ));
 
@@ -48,12 +48,12 @@ class BankSoalController extends Controller
             'option_b'       => 'required|string|max:255',
             'option_c'       => 'required|string|max:255',
             'option_d'       => 'required|string|max:255',
-            'correct_answer' => 'required|in:A,B,C,D',
+            'correct_answer' => 'required|in:A,B,C,D,E',
+            'option_e'       => 'nullable|string|max:255',
         ]);
 
-        // Perbaikan: Bungkus argumen $request->only ke dalam array []
         $question->update(
-            $request->only(['question', 'option_a', 'option_b', 'option_c', 'option_d', 'correct_answer'])
+            $request->only(['question', 'option_a', 'option_b', 'option_c', 'option_d', 'option_e', 'correct_answer'])
         );
 
         return redirect()->route('bank-soal.index')
