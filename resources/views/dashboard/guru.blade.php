@@ -295,6 +295,13 @@
                                 <p class="text-xs text-gray-400">Kelola soal evaluasi</p>
                             </div>
                         </a>
+                        <a href="{{ route('subject-info.edit') }}" class="quick-action">
+                            <div class="quick-action-icon bg-teal-100 text-teal-600"><i class="icon-settings"></i></div>
+                            <div>
+                                <p class="text-sm font-semibold text-gray-800">Info Mata Pelajaran</p>
+                                <p class="text-xs text-gray-400">Edit nama mapel & tujuan pembelajaran</p>
+                            </div>
+                        </a>
                         <a href="{{ asset('files/guidebook.pdf') }}" target="_blank" class="quick-action">
                             <div class="quick-action-icon bg-rose-100 text-rose-600"><i class="icon-file-text"></i></div>
                             <div>

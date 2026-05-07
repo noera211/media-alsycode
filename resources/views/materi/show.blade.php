@@ -70,6 +70,31 @@
             @endif
         </div>
 
+        {{-- ================= TUJUAN PEMBELAJARAN ================= --}}
+        @if ($materi->tujuan_pembelajaran)
+            @php
+                $tujuanList = collect(preg_split('/\r\n|\r|\n/', $materi->tujuan_pembelajaran))
+                    ->map(fn($t) => trim($t))
+                    ->filter()
+                    ->values();
+            @endphp
+            <div class="bg-indigo-50 border border-indigo-100 rounded-xl p-5 mb-6">
+                <div class="flex items-center gap-2 mb-3">
+                    <span class="text-base">🎯</span>
+                    <h2 class="text-sm font-bold text-indigo-800">Tujuan Pembelajaran</h2>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    @foreach ($tujuanList as $t)
+                        <div class="flex items-start gap-2 text-sm text-indigo-700">
+                            <span
+                                class="mt-0.5 flex-shrink-0 w-4 h-4 rounded-full bg-indigo-200 flex items-center justify-center text-xs font-bold text-indigo-600">✓</span>
+                            {{ $t }}
+                        </div>
+                    @endforeach
+                </div>
+            </div>
+        @endif
+
         {{-- ================= TEXT CONTENT ================= --}}
         @if ($materi->content)
             <div class="bg-gray-50 rounded-xl p-6">
@@ -101,7 +126,8 @@
                         <div class="absolute inset-0 bg-black/25 group-hover:bg-black/40 transition"></div>
 
                         <div class="absolute inset-0 flex items-center justify-center">
-                            <div class="w-16 h-16 bg-red-600 rounded-full flex items-center justify-center shadow-xl group-hover:scale-110 transition">
+                            <div
+                                class="w-16 h-16 bg-red-600 rounded-full flex items-center justify-center shadow-xl group-hover:scale-110 transition">
                                 <svg class="w-7 h-7 text-white ml-1" fill="currentColor" viewBox="0 0 24 24">
                                     <path d="M8 5v14l11-7z" />
                                 </svg>
@@ -133,7 +159,6 @@
         {{-- ================= PDF ================= --}}
         @if ($materi->pdf_file)
             @php
-                // Konversi otomatis Google Drive link view -> preview untuk embed
                 $pdfSrc = $materi->pdf_file;
                 if (str_contains($pdfSrc, 'drive.google.com/file/d/')) {
                     preg_match('/\/file\/d\/([^\/]+)/', $pdfSrc, $m);
@@ -144,35 +169,17 @@
             @endphp
 
             <div class="mb-6">
-
                 <div class="flex items-center justify-between mb-2">
-                    <h3 class="font-semibold text-gray-800 text-sm">
-                        📎 Dokumen PDF
-                    </h3>
-                    <a href="{{ $materi->pdf_file }}" target="_blank"
-                        class="text-xs text-indigo-600 hover:underline">
+                    <h3 class="font-semibold text-gray-800 text-sm">📎 Dokumen PDF</h3>
+                    <a href="{{ $materi->pdf_file }}" target="_blank" class="text-xs text-indigo-600 hover:underline">
                         ↗ Buka di tab baru
                     </a>
                 </div>
 
-                {{-- Desktop: iframe embed --}}
-                <div class="hidden sm:block rounded-xl border border-gray-200 overflow-hidden bg-gray-50 h-[600px]">
-                    <iframe
-                        src="{{ $pdfSrc }}"
-                        class="w-full h-full"
-                        allowfullscreen>
+                <div class="rounded-xl border border-gray-200 overflow-hidden bg-gray-50 h-[600px]">
+                    <iframe src="{{ $pdfSrc }}" class="w-full h-full" allowfullscreen>
                     </iframe>
                 </div>
-
-                {{-- Mobile: tombol buka --}}
-                <div class="sm:hidden rounded-xl border border-gray-200 bg-gray-50 p-8 flex flex-col items-center justify-center gap-3 text-center">
-                    <span class="text-4xl">📄</span>
-                    <p class="text-sm text-gray-500 font-medium">PDF tidak dapat ditampilkan di perangkat ini</p>
-                    <a href="{{ $materi->pdf_file }}" target="_blank" class="btn-primary text-sm">
-                        Buka / Unduh PDF
-                    </a>
-                </div>
-
             </div>
         @endif
 
@@ -180,12 +187,31 @@
 
     {{-- FOOTER BUTTON --}}
     <div class="mt-4 flex flex-col sm:flex-row gap-2 sm:justify-between">
-        <a href="{{ route('materi.index') }}" class="btn-outline text-xs text-center">
-            ← Semua Materi
-        </a>
-        <a href="{{ route('pbl.index') }}" class="btn-primary text-xs text-center">
-            Ke Aktivitas PBL →
-        </a>
+
+        {{-- Kiri: Materi Sebelumnya atau Semua Materi --}}
+        @if ($prevMateri)
+            <a href="{{ route('materi.show', $prevMateri) }}"
+                class="btn-outline text-xs text-center flex items-center justify-center gap-1">
+                ← {{ $prevMateri->title }}
+            </a>
+        @else
+            <a href="{{ route('materi.index') }}" class="btn-outline text-xs text-center">
+                ← Semua Materi
+            </a>
+        @endif
+
+        {{-- Kanan: Materi Selanjutnya atau Ke Aktivitas PBL --}}
+        @if ($nextMateri)
+            <a href="{{ route('materi.show', $nextMateri) }}"
+                class="btn-primary text-xs text-center flex items-center justify-center gap-1">
+                {{ $nextMateri->title }} →
+            </a>
+        @else
+            <a href="{{ route('pbl.index') }}" class="btn-primary text-xs text-center">
+                Ke Aktivitas PBL →
+            </a>
+        @endif
+
     </div>
 
 @endsection

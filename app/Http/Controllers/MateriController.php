@@ -30,7 +30,12 @@ class MateriController extends Controller
         $progressWidth  = $progressPct . '%';
 
         return view('materi.index', compact(
-            'materiList', 'statusMap', 'completedCount', 'totalMateri', 'progressPct', 'progressWidth'
+            'materiList',
+            'statusMap',
+            'completedCount',
+            'totalMateri',
+            'progressPct',
+            'progressWidth'
         ));
     }
 
@@ -46,7 +51,10 @@ class MateriController extends Controller
             $status = $progress?->status ?? 'belum';
         }
 
-        return view('materi.show', compact('materi', 'status'));
+        $prevMateri = Materi::where('id', '<', $materi->id)->orderBy('id', 'desc')->first();
+        $nextMateri = Materi::where('id', '>', $materi->id)->orderBy('id', 'asc')->first();
+
+        return view('materi.show', compact('materi', 'status', 'prevMateri', 'nextMateri'));
     }
 
     public function store(Request $request)
