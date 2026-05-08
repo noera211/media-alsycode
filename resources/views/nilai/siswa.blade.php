@@ -12,21 +12,17 @@
 {{-- 3 Kartu Ringkasan Nilai --}}
 <div class="grid grid-cols-3 gap-4 mb-6">
 
-    {{-- Nilai PBL --}}
+    {{-- Nilai PBL Final --}}
     <div class="card p-5 text-center">
         <p class="text-xs font-medium text-gray-500 mb-2">Nilai Aktivitas PBL</p>
-        @if($nilaiPbl !== null)
-            <span class="text-3xl font-bold {{ $nilaiPbl >= 80 ? 'text-emerald-600' : ($nilaiPbl >= 60 ? 'text-amber-600' : 'text-red-600') }}">
-                {{ $nilaiPbl }}
+        @if($nilaiPblFinal !== null)
+            <span class="text-3xl font-bold {{ $nilaiPblFinal >= 80 ? 'text-emerald-600' : ($nilaiPblFinal >= 60 ? 'text-amber-600' : 'text-red-600') }}">
+                {{ $nilaiPblFinal }}
             </span>
-            @if($catatanPbl)
-            <p class="text-xs text-gray-400 mt-1">{{ $catatanPbl }}</p>
-            @else
-            <p class="text-xs text-gray-400 mt-1">dinilai oleh guru</p>
-            @endif
+            <p class="text-xs text-gray-400 mt-1">rata-rata 3 level</p>
         @else
             <span class="text-2xl font-bold text-gray-300">—</span>
-            <p class="text-xs text-gray-400 mt-1">belum dinilai guru</p>
+            <p class="text-xs text-gray-400 mt-1">belum ada submission dinilai</p>
         @endif
     </div>
 
@@ -54,13 +50,51 @@
             <span class="text-3xl font-bold {{ $nilaiAkhir >= 80 ? 'text-emerald-600' : ($nilaiAkhir >= 60 ? 'text-amber-600' : 'text-red-600') }}">
                 {{ $nilaiAkhir }}
             </span>
-            <p class="text-xs text-gray-400 mt-1">(PBL + Evaluasi) ÷ 2</p>
+            <p class="text-xs text-gray-400 mt-1">(PBL Final + Evaluasi) ÷ 2</p>
         @else
             <span class="text-2xl font-bold text-gray-300">—</span>
             <p class="text-xs text-gray-400 mt-1">butuh kedua nilai</p>
         @endif
     </div>
 
+</div>
+
+{{-- Breakdown Nilai PBL per Level --}}
+<div class="card p-5 mb-6">
+    <h2 class="font-semibold text-gray-800 text-sm mb-4">🎯 Rincian Nilai PBL per Level</h2>
+    <div class="grid grid-cols-3 gap-4">
+        @foreach([
+            ['label' => 'Level Mudah',  'key' => 'Mudah',  'color' => 'blue'],
+            ['label' => 'Level Sedang', 'key' => 'Sedang', 'color' => 'amber'],
+            ['label' => 'Level Sulit',  'key' => 'Sulit',  'color' => 'rose'],
+        ] as $lvl)
+        @php $val = $nilaiPerLevel[$lvl['key']] ?? null; @endphp
+        <div class="rounded-xl border p-4 text-center
+            {{ $val !== null ? 'border-gray-200 bg-white' : 'border-dashed border-gray-200 bg-gray-50' }}">
+            <p class="text-xs font-medium text-gray-500 mb-2">{{ $lvl['label'] }}</p>
+            @if($val !== null)
+                <span class="text-2xl font-bold
+                    {{ $val >= 80 ? 'text-emerald-600' : ($val >= 60 ? 'text-amber-600' : 'text-red-600') }}">
+                    {{ $val }}
+                </span>
+                <p class="text-xs text-gray-400 mt-1">nilai tertinggi</p>
+            @else
+                <span class="text-xl font-bold text-gray-300">—</span>
+                <p class="text-xs text-gray-400 mt-1">belum ada</p>
+            @endif
+        </div>
+        @endforeach
+    </div>
+    @if($nilaiPblFinal !== null)
+    <div class="mt-4 pt-4 border-t border-gray-100 flex items-center justify-end gap-2 text-sm text-gray-500">
+        <span>
+            ({{ $nilaiPerLevel['Mudah'] ?? 0 }} + {{ $nilaiPerLevel['Sedang'] ?? 0 }} + {{ $nilaiPerLevel['Sulit'] ?? 0 }}) ÷ 3
+        </span>
+        <span class="text-gray-400">=</span>
+        <span class="font-bold text-gray-800">{{ $nilaiPblFinal }}</span>
+        <span class="text-gray-400 text-xs">(Nilai PBL Final)</span>
+    </div>
+    @endif
 </div>
 
 {{-- Detail Nilai PBL per Aktivitas --}}
@@ -72,7 +106,12 @@
             <div class="flex items-start justify-between mb-3">
                 <div>
                     <h3 class="font-semibold text-gray-800 text-sm">{{ $sub->activity->title }}</h3>
-                    <p class="text-xs text-gray-400">
+                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium mt-1
+                        {{ $sub->activity->difficulty === 'Mudah' ? 'bg-blue-100 text-blue-700' :
+                           ($sub->activity->difficulty === 'Sedang' ? 'bg-amber-100 text-amber-700' : 'bg-rose-100 text-rose-700') }}">
+                        {{ $sub->activity->difficulty }}
+                    </span>
+                    <p class="text-xs text-gray-400 mt-1">
                         Dikumpulkan {{ \Carbon\Carbon::parse($sub->submitted_at)->format('d M Y') }}
                         @if($sub->graded_at)
                             · Dinilai {{ \Carbon\Carbon::parse($sub->graded_at)->format('d M Y') }}

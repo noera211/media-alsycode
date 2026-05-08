@@ -43,16 +43,32 @@
             <span class="font-bold text-gray-900">{{ $set->name }}</span>
         </div>
     </div>
-    <div class="bg-indigo-50 text-indigo-700 px-3 py-1.5 rounded-xl text-sm font-bold" id="progressBadge">
-        0/{{ $set->questions->count() }} dijawab
+    <div class="flex items-center gap-2">
+        @if($isRemedial)
+            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-700 border border-amber-200">
+                🔄 Pengerjaan Ulang — opsi diacak
+            </span>
+        @endif
+        <div class="bg-indigo-50 text-indigo-700 px-3 py-1.5 rounded-xl text-sm font-bold" id="progressBadge">
+            0/{{ $set->questions->count() }} dijawab
+        </div>
     </div>
 </div>
 
 <form action="{{ route('kumpulan-soal.submit', $set) }}" method="POST" id="testForm" onsubmit="return confirmSubmit()">
 @csrf
 
+{{-- Data opsi teracak dikirim bersama form agar backend bisa verifikasi jawaban benar --}}
+@if($isRemedial)
+    <input type="hidden" name="shuffled_options" value="{{ json_encode($shuffledOptions) }}">
+@endif
+
 <div class="space-y-6">
     @foreach($set->questions as $i => $q)
+    @php
+        // Gunakan opsi teracak jika remedial, opsi normal jika bukan
+        $displayOptions = $isRemedial ? ($shuffledOptions[$q->id] ?? $q->options) : $q->options;
+    @endphp
     <div class="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm" id="q{{ $q->id }}">
 
         <div class="flex items-start gap-3 mb-4">
@@ -65,7 +81,7 @@
         </div>
 
         <div class="space-y-2 pl-11">
-            @foreach($q->options as $key => $val)
+            @foreach($displayOptions as $key => $val)
             <label class="option-label" id="opt-{{ $q->id }}-{{ $key }}"
                    onclick="pickOption({{ $q->id }}, '{{ $key }}', this)">
                 <input type="radio" name="answers[{{ $q->id }}]" value="{{ $key }}"
@@ -100,7 +116,6 @@ const total = {{ $set->questions->count() }};
 const answered = new Set();
 
 function pickOption(qid, key, el) {
-    // unmark semua opsi untuk soal ini
     document.querySelectorAll(`[id^="opt-${qid}-"]`).forEach(l => l.classList.remove('picked'));
     el.classList.add('picked');
     el.querySelector('input').checked = true;

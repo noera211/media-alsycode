@@ -54,6 +54,7 @@ Route::middleware(['auth', 'role:guru,siswa'])->group(function () {
         Route::post('/toggle-test/{siswa}', [NilaiController::class, 'toggleTest'])->name('toggle.test');
         Route::post('/evaluation-set', [NilaiController::class, 'updateEvaluationSet'])->name('evaluation-set.update');
         Route::post('/test', [NilaiController::class, 'submitTest'])->name('test.submit');
+        Route::get('/export', [NilaiController::class, 'exportNilai'])->name('export');
     });
 
     Route::prefix('bank-soal')->name('bank-soal.')->group(function () {

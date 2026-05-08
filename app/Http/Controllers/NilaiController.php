@@ -15,6 +15,40 @@ use Illuminate\Support\Facades\Auth;
 
 class NilaiController extends Controller
 {
+    // ─── Helper: Hitung Nilai PBL Final dari Submission Siswa ────────────
+    // Algoritma:
+    //   1. Ambil nilai tertinggi dari masing-masing level (Mudah, Sedang, Sulit)
+    //   2. Rata-rata ketiga nilai tersebut = Nilai PBL Final
+    //   3. Jika suatu level tidak ada submission dinilai, nilainya 0
+
+    private function hitungNilaiPblFinal(int $studentId): ?int
+    {
+        $submissions = PblSubmission::with('activity')
+            ->where('student_id', $studentId)
+            ->whereNotNull('nilai')
+            ->get();
+
+        if ($submissions->isEmpty()) {
+            return null;
+        }
+
+        $levels = ['Mudah', 'Sedang', 'Sulit'];
+        $nilaiPerLevel = [];
+
+        foreach ($levels as $level) {
+            $maxNilai = $submissions
+                ->filter(fn($s) => $s->activity && $s->activity->difficulty === $level)
+                ->max('nilai');
+
+            // Jika tidak ada submission untuk level ini, nilai = 0
+            $nilaiPerLevel[$level] = $maxNilai ?? 0;
+        }
+
+        // Rata-ratakan ketiga level
+        $total = array_sum($nilaiPerLevel);
+        return (int) round($total / count($levels));
+    }
+
     // ─── Halaman Nilai ───────────────────────────────────────────────────
 
     public function index()
@@ -22,7 +56,7 @@ class NilaiController extends Controller
         /** @var User $user */
         $user = Auth::user();
 
-        $subjectInfo = SubjectInfo::first();
+        $subjectInfo   = SubjectInfo::first();
         $evaluationSet = null;
         if ($subjectInfo && $subjectInfo->current_evaluation_set_id) {
             $evaluationSet = QuestionSet::withCount('questions')->find($subjectInfo->current_evaluation_set_id);
@@ -38,6 +72,7 @@ class NilaiController extends Controller
             $gradeMap = StudentGrade::whereIn('student_id', $siswaIds)
                 ->get()->keyBy('student_id');
 
+            // Ambil semua submission bernilai, group per siswa lalu per difficulty
             $submissionMap = PblSubmission::with('activity')
                 ->whereIn('student_id', $siswaIds)
                 ->whereNotNull('nilai')
@@ -60,29 +95,41 @@ class NilaiController extends Controller
                     ->map(fn($results) => $results->first());
             }
 
+            // Hitung Nilai PBL Final otomatis per siswa untuk tampilan guru
+            $nilaiPblFinalMap = [];
+            foreach ($siswaList as $siswa) {
+                $nilaiPblFinalMap[$siswa->id] = $this->hitungNilaiPblFinal($siswa->id);
+            }
+
             return view('nilai.guru', compact(
-                'siswaList', 'gradeMap', 'submissionMap', 'testMap', 'subjectInfo', 'evaluationSet', 'sets'
+                'siswaList', 'gradeMap', 'submissionMap', 'testMap',
+                'subjectInfo', 'evaluationSet', 'sets', 'nilaiPblFinalMap'
             ));
         }
 
-        // Siswa
+        // ─── Siswa ───────────────────────────────────────────────────────
         $submissions = PblSubmission::with('activity')
             ->where('student_id', $user->id)
             ->whereNotNull('nilai')
             ->orderByDesc('nilai')->get();
 
-        $grade         = StudentGrade::where('student_id', $user->id)->first();
-        $nilaiPbl      = $grade?->nilai_pbl;
-        $catatanPbl    = $grade?->catatan_pbl;
-
-        // Cek apakah siswa boleh test:
-        // - Belum punya record grade → boleh (default)
-        // - is_test_open = true → boleh
-        // - is_test_open = false → sudah dikunci
+        $grade      = StudentGrade::where('student_id', $user->id)->first();
         $isTestOpen = $grade === null || $grade->is_test_open;
 
+        // Hitung Nilai PBL Final otomatis untuk siswa
+        $nilaiPblFinal = $this->hitungNilaiPblFinal($user->id);
+
+        // Detail nilai per level untuk ditampilkan ke siswa
+        $nilaiPerLevel = [];
+        foreach (['Mudah', 'Sedang', 'Sulit'] as $level) {
+            $maxNilai = $submissions
+                ->filter(fn($s) => $s->activity && $s->activity->difficulty === $level)
+                ->max('nilai');
+            $nilaiPerLevel[$level] = $maxNilai; // null jika belum ada
+        }
+
         $lastTestResult = null;
-        $nilaiEvaluasi = null;
+        $nilaiEvaluasi  = null;
         if ($evaluationSet) {
             $lastTestResult = QuestionSetResult::where('question_set_id', $evaluationSet->id)
                 ->where('student_id', $user->id)
@@ -91,15 +138,16 @@ class NilaiController extends Controller
         }
 
         $nilaiAkhir = null;
-        if ($nilaiPbl !== null && $nilaiEvaluasi !== null) {
-            $nilaiAkhir = round(($nilaiPbl + $nilaiEvaluasi) / 2);
+        if ($nilaiPblFinal !== null && $nilaiEvaluasi !== null) {
+            $nilaiAkhir = round(($nilaiPblFinal + $nilaiEvaluasi) / 2);
         }
 
         $questions = $evaluationSet ? $evaluationSet->questions : collect();
 
         return view('nilai.siswa', compact(
             'submissions', 'lastTestResult', 'questions',
-            'nilaiPbl', 'catatanPbl', 'nilaiEvaluasi', 'nilaiAkhir', 'isTestOpen', 'evaluationSet'
+            'nilaiPblFinal', 'nilaiPerLevel', 'nilaiEvaluasi', 'nilaiAkhir',
+            'isTestOpen', 'evaluationSet'
         ));
     }
 
@@ -199,8 +247,7 @@ class NilaiController extends Controller
         $user = Auth::user();
         if (!$user || !$user->isSiswa()) abort(403);
 
-        // Cek apakah siswa boleh mengerjakan test
-        $grade = StudentGrade::where('student_id', $user->id)->first();
+        $grade      = StudentGrade::where('student_id', $user->id)->first();
         $isTestOpen = $grade === null || $grade->is_test_open;
 
         if (!$isTestOpen) {
@@ -232,7 +279,6 @@ class NilaiController extends Controller
             'taken_at'        => now(),
         ]);
 
-        // Kunci test setelah selesai mengerjakan
         StudentGrade::updateOrCreate(
             ['student_id' => $user->id],
             ['is_test_open' => false]
@@ -263,6 +309,107 @@ class NilaiController extends Controller
         $subjectInfo->save();
 
         return back()->with('success', 'Set evaluasi berhasil diperbarui.');
+    }
+
+    // ─── Guru: Export Nilai ke Excel ─────────────────────────────────────
+
+    public function exportNilai()
+    {
+        $this->authorizeGuru();
+
+        $subjectInfo   = SubjectInfo::first();
+        $evaluationSet = null;
+        if ($subjectInfo && $subjectInfo->current_evaluation_set_id) {
+            $evaluationSet = QuestionSet::find($subjectInfo->current_evaluation_set_id);
+        }
+
+        $siswaList = User::where('role', 'siswa')
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get();
+
+        if ($evaluationSet) {
+            $testMap = QuestionSetResult::where('question_set_id', $evaluationSet->id)
+                ->latest('taken_at')
+                ->get()
+                ->groupBy('student_id')
+                ->map(fn($r) => $r->first());
+        } else {
+            $testMap = TestResult::orderByDesc('taken_at')
+                ->get()
+                ->groupBy('student_id')
+                ->map(fn($r) => $r->first());
+        }
+
+        // Buat CSV manual (tanpa package eksternal)
+        $filename = 'nilai-siswa-' . now()->format('Ymd-His') . '.csv';
+
+        $headers = [
+            'Content-Type'        => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => "attachment; filename=\"{$filename}\"",
+        ];
+
+        $callback = function () use ($siswaList, $testMap) {
+            $file = fopen('php://output', 'w');
+
+            // BOM untuk Excel agar karakter UTF-8 terbaca
+            fprintf($file, chr(0xEF) . chr(0xBB) . chr(0xBF));
+
+            // Header baris
+            fputcsv($file, [
+                'No',
+                'Nama Siswa',
+                'Nilai PBL - Mudah (Tertinggi)',
+                'Nilai PBL - Sedang (Tertinggi)',
+                'Nilai PBL - Sulit (Tertinggi)',
+                'Nilai PBL Final (Rata-rata)',
+                'Nilai Evaluasi',
+                'Nilai Akhir',
+            ]);
+
+            foreach ($siswaList as $i => $siswa) {
+                // Ambil submission bernilai per siswa
+                $submissions = PblSubmission::with('activity')
+                    ->where('student_id', $siswa->id)
+                    ->whereNotNull('nilai')
+                    ->get();
+
+                $nilaiMudah  = $submissions->filter(fn($s) => $s->activity?->difficulty === 'Mudah')->max('nilai');
+                $nilaiSedang = $submissions->filter(fn($s) => $s->activity?->difficulty === 'Sedang')->max('nilai');
+                $nilaiSulit  = $submissions->filter(fn($s) => $s->activity?->difficulty === 'Sulit')->max('nilai');
+
+                // Hitung PBL Final (level yang tidak ada = 0)
+                $nilaiPblFinal = null;
+                if ($submissions->isNotEmpty()) {
+                    $nilaiPblFinal = (int) round(
+                        (($nilaiMudah ?? 0) + ($nilaiSedang ?? 0) + ($nilaiSulit ?? 0)) / 3
+                    );
+                }
+
+                $testResult    = $testMap[$siswa->id] ?? null;
+                $nilaiEvaluasi = $testResult ? $testResult->persentase : null;
+
+                $nilaiAkhir = null;
+                if ($nilaiPblFinal !== null && $nilaiEvaluasi !== null) {
+                    $nilaiAkhir = round(($nilaiPblFinal + $nilaiEvaluasi) / 2);
+                }
+
+                fputcsv($file, [
+                    $i + 1,
+                    $siswa->name,
+                    $nilaiMudah  ?? '-',
+                    $nilaiSedang ?? '-',
+                    $nilaiSulit  ?? '-',
+                    $nilaiPblFinal  ?? '-',
+                    $nilaiEvaluasi  ?? '-',
+                    $nilaiAkhir     ?? '-',
+                ]);
+            }
+
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
     }
 
     private function authorizeGuru(): void

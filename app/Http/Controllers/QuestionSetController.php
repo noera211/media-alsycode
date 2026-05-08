@@ -182,71 +182,135 @@ class QuestionSetController extends Controller
     }
 
     /* -------------------------------------------------------
-       SISWA: halaman pengerjaan soal
-    ------------------------------------------------------- */
+   SISWA: halaman pengerjaan soal
+------------------------------------------------------- */
     public function take(QuestionSet $kumpulanSoal)
     {
         /** @var User $user */
         $user = Auth::user();
-        $set = $kumpulanSoal->load('questions');
+        $set  = $kumpulanSoal->load('questions');
 
         if ($set->questions->isEmpty()) {
             return back()->with('error', 'Kumpulan soal ini belum memiliki soal.');
         }
 
-        // Check if student has already completed this set
         $existingResult = QuestionSetResult::where('question_set_id', $set->id)
             ->where('student_id', $user->id)
             ->exists();
 
+        $isRemedial = false;
+
         if ($existingResult) {
-            // Check if this attempt is unlocked for retry by teacher
-            $isUnlocked = QuestionSetUnlock::where('student_id', $user->id)
+            // Cek 1: unlock via tabel QuestionSetUnlock (kumpulan soal biasa)
+            $isUnlockedViaTable = QuestionSetUnlock::where('student_id', $user->id)
                 ->where('question_set_id', $set->id)
                 ->exists();
 
-            if (!$isUnlocked) {
+            // Cek 2: unlock via is_test_open khusus set evaluasi aktif
+            $subjectInfo     = \App\Models\SubjectInfo::first();
+            $isEvaluationSet = $subjectInfo
+                && $subjectInfo->current_evaluation_set_id == $set->id;
+
+            $isUnlockedViaGrade = false;
+            if ($isEvaluationSet) {
+                $grade              = \App\Models\StudentGrade::where('student_id', $user->id)->first();
+                $isUnlockedViaGrade = $grade && $grade->is_test_open;
+            }
+
+            // Jika tidak lolos salah satu pun → blokir
+            if (!$isUnlockedViaTable && !$isUnlockedViaGrade) {
                 return back()->with('error', 'Anda sudah menyelesaikan set ini. Guru dapat membuka akses untuk pengerjaan ulang.');
             }
 
-            // If unlocked, delete the unlock record (one-time unlock for retry)
-            QuestionSetUnlock::where('student_id', $user->id)
-                ->where('question_set_id', $set->id)
-                ->delete();
+            // Hapus record unlock table jika dipakai (one-time)
+            if ($isUnlockedViaTable) {
+                QuestionSetUnlock::where('student_id', $user->id)
+                    ->where('question_set_id', $set->id)
+                    ->delete();
+            }
+
+            $isRemedial = true;
         }
 
-        return view('kumpulan-soal.take', compact('set'));
+        // Jika remedial, acak urutan value opsi (key A/B/C/D tetap, isi diacak)
+        $shuffledOptions = [];
+        if ($isRemedial) {
+            foreach ($set->questions as $q) {
+                $originalOptions = $q->options;
+                $values          = array_values($originalOptions);
+                shuffle($values);
+                $keys                      = array_keys($originalOptions);
+                $shuffledOptions[$q->id]   = array_combine($keys, $values);
+            }
+        }
+
+        return view('kumpulan-soal.take', compact('set', 'isRemedial', 'shuffledOptions'));
     }
 
     /* -------------------------------------------------------
-       SISWA: submit jawaban
-    ------------------------------------------------------- */
+   SISWA: submit jawaban
+------------------------------------------------------- */
     public function submit(Request $request, QuestionSet $kumpulanSoal)
     {
         $set = $kumpulanSoal->load('questions');
 
         $request->validate([
             'answers'   => 'required|array',
-            'answers.*' => 'in:A,B,C,D',
+            'answers.*' => 'in:A,B,C,D,E',
         ]);
 
         $answers = $request->input('answers', []);
-        $score = 0;
+        $score   = 0;
+
+        // Ambil shuffled_options jika mode remedial
+        $shuffledOptions = null;
+        if ($request->filled('shuffled_options')) {
+            $shuffledOptions = json_decode($request->input('shuffled_options'), true);
+        }
 
         foreach ($set->questions as $q) {
-            if (isset($answers[$q->id]) && $answers[$q->id] === $q->correct_answer) {
+            $chosenKey = $answers[$q->id] ?? null;
+
+            if ($chosenKey === null) {
+                continue;
+            }
+
+            if ($shuffledOptions && isset($shuffledOptions[$q->id])) {
+                // Mode remedial: cari value yang dipilih di opsi teracak,
+                // lalu cocokkan ke key asli
+                $shuffled        = $shuffledOptions[$q->id];
+                $chosenValue     = $shuffled[$chosenKey] ?? null;
+                $originalOptions = $q->options;
+                $originalKey     = array_search($chosenValue, $originalOptions);
+                $correct         = ($originalKey !== false && $originalKey === $q->correct_answer);
+            } else {
+                $correct = ($chosenKey === $q->correct_answer);
+            }
+
+            if ($correct) {
                 $score++;
             }
         }
 
+        // Simpan shuffled_options ke database agar review bisa sinkron
         $result = QuestionSetResult::create([
-            'question_set_id' => $set->id,
-            'student_id'      => Auth::id(),
-            'score'           => $score,
-            'total_questions' => $set->questions->count(),
-            'answers'         => $answers,
-            'taken_at'        => now(),
+            'question_set_id'  => $set->id,
+            'student_id'       => Auth::id(),
+            'score'            => $score,
+            'total_questions'  => $set->questions->count(),
+            'answers'          => $answers,
+            'shuffled_options' => $shuffledOptions, // null jika bukan remedial
+            'taken_at'         => now(),
         ]);
+
+        // Jika ini set evaluasi aktif, kunci kembali is_test_open setelah selesai
+        $subjectInfo = \App\Models\SubjectInfo::first();
+        if ($subjectInfo && $subjectInfo->current_evaluation_set_id == $set->id) {
+            \App\Models\StudentGrade::updateOrCreate(
+                ['student_id' => Auth::id()],
+                ['is_test_open' => false]
+            );
+        }
 
         return redirect()->route('kumpulan-soal.result', $result->id);
     }

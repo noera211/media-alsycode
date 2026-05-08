@@ -40,23 +40,23 @@
 
             {{-- STATUS SISWA --}}
             @if (auth()->user()->isSiswa())
-                <div class="flex flex-wrap gap-2">
+                <div class="flex flex-row flex-nowrap gap-2">
 
                     @if ($status !== 'sedang' && $status !== 'selesai')
-                        <form action="{{ route('materi.status', $materi) }}" method="POST">
+                        <form action="{{ route('materi.status', $materi) }}" method="POST" class="flex-1 min-w-0">
                             @csrf
                             <input type="hidden" name="status" value="sedang">
-                            <button class="btn-outline text-xs">
+                            <button class="btn-outline text-xs w-full whitespace-nowrap">
                                 📖 Mulai Belajar
                             </button>
                         </form>
                     @endif
 
                     @if ($status !== 'selesai')
-                        <form action="{{ route('materi.status', $materi) }}" method="POST">
+                        <form action="{{ route('materi.status', $materi) }}" method="POST" class="flex-1 min-w-0">
                             @csrf
                             <input type="hidden" name="status" value="selesai">
-                            <button class="btn-primary text-xs">
+                            <button class="btn-primary text-xs w-full whitespace-nowrap">
                                 ✓ Tandai Selesai
                             </button>
                         </form>

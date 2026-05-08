@@ -9,12 +9,14 @@ class QuestionSetResult extends Model
     public $timestamps = false;
 
     protected $fillable = [
-        'question_set_id', 'student_id', 'score', 'total_questions', 'answers', 'taken_at',
+        'question_set_id', 'student_id', 'score', 'total_questions',
+        'answers', 'shuffled_options', 'taken_at',
     ];
 
     protected $casts = [
-        'answers'  => 'array',
-        'taken_at' => 'datetime',
+        'answers'          => 'array',
+        'shuffled_options' => 'array',
+        'taken_at'         => 'datetime',
     ];
 
     public function questionSet()

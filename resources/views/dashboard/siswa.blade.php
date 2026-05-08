@@ -83,7 +83,7 @@
                 </p>
                 <h1 class="text-2xl font-extrabold mb-1">Halo, {{ auth()->user()->name }}!</h1>
                 <p class="text-indigo-200 text-sm mb-4">Lanjutkan belajar algoritmamu hari ini.</p>
-                <div class="max-w-xs">
+                <div class="w-full pr-0 sm:pr-6">
                     <div class="flex items-center justify-between mb-1.5">
                         <span class="text-xs font-semibold text-indigo-200">Progress Materi</span>
                         <span class="text-xs font-bold text-white">{{ $completedCount }}/{{ $totalMateri }}</span>

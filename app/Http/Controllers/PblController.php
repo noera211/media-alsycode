@@ -160,7 +160,7 @@ class PblController extends Controller
 
         $request->validate([
             'answer' => 'nullable|string',
-            'file'   => 'nullable|file|mimes:pdf,doc,docx,txt|max:5120',
+            'file'   => 'nullable|file|mimes:pdf|max:5120|mimetypes:application/pdf',
         ]);
 
         $existing = PblSubmission::where('activity_id', $pblActivity->id)

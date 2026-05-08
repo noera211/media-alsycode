@@ -36,9 +36,8 @@
                 <p class="text-xs text-indigo-700 flex items-center gap-1">
                     <i class="icon-info" style="font-size: 14px;"></i>
                     <span>
-                        <span class="font-semibold">Nilai PBL</span> diinput manual oleh guru berdasarkan nilai terbaik / level tertinggi siswa.
-                        <span class="font-semibold ml-2">Nilai Evaluasi</span> otomatis dari hasil test mandiri siswa.
-                        <span class="font-semibold ml-2">Nilai Akhir</span> = rata-rata keduanya.
+                        <span class="font-semibold">Nilai PBL Final</span> = rata-rata nilai tertinggi tiap level (Mudah + Sedang + Sulit) ÷ 3.
+                        <span class="font-semibold ml-2">Nilai Akhir</span> = (Nilai PBL Final + Nilai Evaluasi) ÷ 2.
                     </span>
                 </p>
             </div>
@@ -46,9 +45,16 @@
             <div class="card overflow-hidden">
                 <div class="p-5 border-b border-gray-100 flex items-center justify-between">
                     <h2 class="font-semibold text-gray-800">Daftar Nilai Siswa</h2>
-                    <span class="text-xs text-gray-400 flex items-center gap-1.5">
-                        <i class="icon-users" style="font-size: 14px;"></i> {{ $siswaList->count() }} siswa
-                    </span>
+                    <div class="flex items-center gap-3">
+                        <span class="text-xs text-gray-400 flex items-center gap-1.5">
+                            <i class="icon-users" style="font-size: 14px;"></i> {{ $siswaList->count() }} siswa
+                        </span>
+                        {{-- Tombol Export (Revisi 4) --}}
+                        <a href="{{ route('nilai.export') }}"
+                            class="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg bg-emerald-100 text-emerald-700 hover:bg-emerald-200 transition">
+                            <i class="icon-download" style="font-size: 13px;"></i> Export CSV/Excel
+                        </a>
+                    </div>
                 </div>
                 <div class="overflow-x-auto">
                     <table class="w-full text-sm">
@@ -56,17 +62,23 @@
                             <tr>
                                 <th class="text-left px-5 py-3 text-xs font-semibold text-gray-500">No</th>
                                 <th class="text-left px-5 py-3 text-xs font-semibold text-gray-500">Nama Siswa</th>
-                                <th class="text-center px-5 py-3 text-xs font-semibold text-gray-500">
-                                    Nilai PBL
-                                    <span class="block text-gray-400 font-normal">(input guru)</span>
+                                <th class="text-center px-3 py-3 text-xs font-semibold text-gray-500">
+                                    PBL Mudah<span class="block text-gray-400 font-normal">(tertinggi)</span>
+                                </th>
+                                <th class="text-center px-3 py-3 text-xs font-semibold text-gray-500">
+                                    PBL Sedang<span class="block text-gray-400 font-normal">(tertinggi)</span>
+                                </th>
+                                <th class="text-center px-3 py-3 text-xs font-semibold text-gray-500">
+                                    PBL Sulit<span class="block text-gray-400 font-normal">(tertinggi)</span>
+                                </th>
+                                <th class="text-center px-3 py-3 text-xs font-semibold text-gray-500">
+                                    Nilai PBL Final<span class="block text-gray-400 font-normal">(rata-rata)</span>
                                 </th>
                                 <th class="text-center px-5 py-3 text-xs font-semibold text-gray-500">
-                                    Nilai Evaluasi
-                                    <span class="block text-gray-400 font-normal">(otomatis test)</span>
+                                    Nilai Evaluasi<span class="block text-gray-400 font-normal">(otomatis test)</span>
                                 </th>
                                 <th class="text-center px-5 py-3 text-xs font-semibold text-gray-500">
-                                    Nilai Akhir
-                                    <span class="block text-gray-400 font-normal">(rata-rata)</span>
+                                    Nilai Akhir<span class="block text-gray-400 font-normal">(rata-rata)</span>
                                 </th>
                                 <th class="text-center px-5 py-3 text-xs font-semibold text-gray-500">Status Test</th>
                                 <th class="text-center px-5 py-3 text-xs font-semibold text-gray-500">Aksi</th>
@@ -75,42 +87,53 @@
                         <tbody class="divide-y divide-gray-100">
                             @foreach ($siswaList as $i => $siswa)
                                 @php
-                                    $grade        = $gradeMap[$siswa->id] ?? null;
-                                    $nilaiPbl     = $grade?->nilai_pbl;
-                                    $testResult   = $testMap[$siswa->id] ?? null;
+                                    $grade         = $gradeMap[$siswa->id] ?? null;
+                                    $testResult    = $testMap[$siswa->id] ?? null;
                                     $nilaiEvaluasi = $testResult ? $testResult->persentase : null;
-                                    $nilaiAkhir   = $nilaiPbl !== null && $nilaiEvaluasi !== null
-                                        ? round(($nilaiPbl + $nilaiEvaluasi) / 2) : null;
-                                    $subsSiswa    = $submissionMap[$siswa->id] ?? collect();
-                                    $isTestOpen   = $grade ? $grade->is_test_open : true;
-                                    $sudahTest    = $testResult !== null;
+                                    $subsSiswa     = $submissionMap[$siswa->id] ?? collect();
+                                    $isTestOpen    = $grade ? $grade->is_test_open : true;
+                                    $sudahTest     = $testResult !== null;
+
+                                    // Nilai tertinggi per level
+                                    $nilaiMudah  = $subsSiswa->filter(fn($s) => $s->activity?->difficulty === 'Mudah')->max('nilai');
+                                    $nilaiSedang = $subsSiswa->filter(fn($s) => $s->activity?->difficulty === 'Sedang')->max('nilai');
+                                    $nilaiSulit  = $subsSiswa->filter(fn($s) => $s->activity?->difficulty === 'Sulit')->max('nilai');
+
+                                    // Nilai PBL Final dari nilaiPblFinalMap (sudah dihitung di controller)
+                                    $nilaiPblFinal = $nilaiPblFinalMap[$siswa->id] ?? null;
+
+                                    $nilaiAkhir = $nilaiPblFinal !== null && $nilaiEvaluasi !== null
+                                        ? round(($nilaiPblFinal + $nilaiEvaluasi) / 2)
+                                        : null;
                                 @endphp
                                 <tr class="hover:bg-gray-50">
                                     <td class="px-5 py-4 text-gray-400">{{ $i + 1 }}</td>
                                     <td class="px-5 py-4">
                                         <p class="font-medium text-gray-800">{{ $siswa->name }}</p>
-                                        @if ($subsSiswa->count() > 0)
-                                            <p class="text-xs text-gray-400 mt-0.5">
-                                                {{ $subsSiswa->count() }} studi kasus ·
-                                                tertinggi: <span class="text-indigo-600 font-semibold">{{ $subsSiswa->max('nilai') }}</span>
-                                                ({{ $subsSiswa->first()->activity->title ?? '-' }})
-                                            </p>
-                                        @else
-                                            <p class="text-xs text-gray-400 mt-0.5">Belum ada submission dinilai</p>
-                                        @endif
+                                        <p class="text-xs text-gray-400 mt-0.5">{{ $subsSiswa->count() }} submission dinilai</p>
                                     </td>
 
-                                    {{-- Nilai PBL --}}
-                                    <td class="px-5 py-4 text-center">
-                                        @if ($nilaiPbl !== null)
-                                            <span class="inline-flex items-center justify-center h-8 w-10 rounded-lg text-sm font-bold
-                                                {{ $nilaiPbl >= 80 ? 'bg-emerald-100 text-emerald-700' : ($nilaiPbl >= 60 ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700') }}">
-                                                {{ $nilaiPbl }}
-                                            </span>
-                                            @if ($grade->catatan_pbl)
-                                                <p class="text-xs text-gray-400 mt-1 max-w-[100px] mx-auto truncate" title="{{ $grade->catatan_pbl }}">
-                                                    {{ $grade->catatan_pbl }}</p>
+                                    {{-- PBL per level --}}
+                                    @foreach ([['val' => $nilaiMudah, 'color' => 'blue'], ['val' => $nilaiSedang, 'color' => 'amber'], ['val' => $nilaiSulit, 'color' => 'rose']] as $lvl)
+                                        <td class="px-3 py-4 text-center">
+                                            @if ($lvl['val'] !== null)
+                                                <span class="inline-flex items-center justify-center h-8 w-10 rounded-lg text-sm font-bold
+                                                    {{ $lvl['val'] >= 80 ? 'bg-emerald-100 text-emerald-700' : ($lvl['val'] >= 60 ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700') }}">
+                                                    {{ $lvl['val'] }}
+                                                </span>
+                                            @else
+                                                <span class="text-gray-300 text-xs">—</span>
                                             @endif
+                                        </td>
+                                    @endforeach
+
+                                    {{-- Nilai PBL Final --}}
+                                    <td class="px-3 py-4 text-center">
+                                        @if ($nilaiPblFinal !== null)
+                                            <span class="inline-flex items-center justify-center h-8 w-10 rounded-lg text-sm font-bold ring-1
+                                                {{ $nilaiPblFinal >= 80 ? 'bg-emerald-100 text-emerald-700 ring-emerald-300' : ($nilaiPblFinal >= 60 ? 'bg-amber-100 text-amber-700 ring-amber-300' : 'bg-red-100 text-red-700 ring-red-300') }}">
+                                                {{ $nilaiPblFinal }}
+                                            </span>
                                         @else
                                             <span class="text-gray-300 text-xs">—</span>
                                         @endif
@@ -163,21 +186,6 @@
                                     {{-- Aksi --}}
                                     <td class="px-5 py-4 text-center">
                                         <div class="flex items-center justify-center gap-2 flex-wrap">
-
-                                            {{-- Tombol Beri/Edit Nilai PBL --}}
-                                            @if ($nilaiPbl !== null)
-                                                <button onclick="openPblModal({{ $siswa->id }}, '{{ addslashes($siswa->name) }}', {{ $nilaiPbl ?? 'null' }}, '{{ addslashes($grade?->catatan_pbl ?? '') }}')"
-                                                    class="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg bg-indigo-100 text-indigo-700 hover:bg-indigo-200 transition">
-                                                    <i class="icon-pencil" style="font-size: 13px;"></i> Edit PBL
-                                                </button>
-                                            @else
-                                                <button onclick="openPblModal({{ $siswa->id }}, '{{ addslashes($siswa->name) }}', {{ $nilaiPbl ?? 'null' }}, '{{ addslashes($grade?->catatan_pbl ?? '') }}')"
-                                                    class="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg bg-emerald-100 text-emerald-700 hover:bg-emerald-200 transition">
-                                                    <i class="icon-plus-circle" style="font-size: 13px;"></i> Beri Nilai
-                                                </button>
-                                            @endif
-
-                                            {{-- Tombol Buka/Kunci Test --}}
                                             @if ($sudahTest)
                                                 <form action="{{ route('nilai.toggle.test', $siswa) }}" method="POST">
                                                     @csrf
@@ -194,7 +202,6 @@
                                                     @endif
                                                 </form>
                                             @endif
-
                                         </div>
                                     </td>
                                 </tr>
@@ -202,7 +209,7 @@
 
                             @if ($siswaList->isEmpty())
                                 <tr>
-                                    <td colspan="7" class="px-5 py-10 text-center text-gray-400 text-sm">
+                                    <td colspan="10" class="px-5 py-10 text-center text-gray-400 text-sm">
                                         <i class="icon-users" style="font-size: 24px; display:block; margin: 0 auto 8px;"></i>
                                         Belum ada siswa terdaftar.
                                     </td>
@@ -214,62 +221,8 @@
             </div>
         </div>
     </div>
-
-    {{-- Modal Input Nilai PBL --}}
-    <div id="modal-pbl" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/50"
-        onclick="if(event.target === this) document.getElementById('modal-pbl').classList.add('hidden')">
-        <div class="bg-white rounded-2xl shadow-xl w-full max-w-sm mx-4">
-            <div class="p-6">
-                <div class="flex items-center justify-between mb-1">
-                    <h2 class="text-lg font-bold flex items-center gap-2">
-                        <i class="icon-clipboard-edit" style="font-size: 20px;"></i> Nilai PBL
-                    </h2>
-                    <button type="button" onclick="document.getElementById('modal-pbl').classList.add('hidden')"
-                        class="text-gray-400 hover:text-gray-600">
-                        <i class="icon-x" style="font-size: 20px;"></i>
-                    </button>
-                </div>
-                <p id="modal-pbl-name" class="text-sm text-gray-500 mb-4"></p>
-                <form id="pbl-form" action="" method="POST" class="space-y-4">
-                    @csrf
-                    <div>
-                        <label class="text-sm font-medium text-gray-700 block mb-1">Nilai PBL (0 – 100)</label>
-                        <input type="number" id="modal-pbl-val" name="nilai_pbl" min="0" max="100"
-                            class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"
-                            placeholder="Contoh: 85">
-                        <p class="text-xs text-gray-400 mt-1">Ambil nilai terbaik atau level tertinggi yang mampu dikerjakan siswa.</p>
-                    </div>
-                    <div>
-                        <label class="text-sm font-medium text-gray-700 block mb-1">Catatan <span class="font-normal text-gray-400">(opsional)</span></label>
-                        <input type="text" id="modal-pbl-catatan" name="catatan_pbl"
-                            class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"
-                            placeholder="Contoh: Level Sulit — Algoritma Sorting">
-                    </div>
-                    <div class="flex gap-3 justify-end pt-1">
-                        <button type="button" onclick="document.getElementById('modal-pbl').classList.add('hidden')"
-                            class="px-4 py-2 text-sm font-medium text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition">
-                            Batal
-                        </button>
-                        <button type="submit"
-                            class="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition">
-                            <i class="icon-save" style="font-size: 16px;"></i> Simpan
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
 @endsection
 
 @push('scripts')
     <script src="//unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
-    <script>
-        function openPblModal(siswaId, name, nilaiPbl, catatan) {
-            document.getElementById('modal-pbl-name').textContent = name;
-            document.getElementById('modal-pbl-val').value = nilaiPbl !== null ? nilaiPbl : '';
-            document.getElementById('modal-pbl-catatan').value = catatan;
-            document.getElementById('pbl-form').action = '/nilai/pbl/' + siswaId;
-            document.getElementById('modal-pbl').classList.remove('hidden');
-        }
-    </script>
 @endpush
